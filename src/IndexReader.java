@@ -1,5 +1,7 @@
 package webdata;
 
+import java.util.Enumeration;
+
 public class IndexReader {
 
 	/**
