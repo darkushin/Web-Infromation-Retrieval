@@ -1,4 +1,4 @@
-package webdata;
+//package webdata;
 
 public class SlowIndexWriter {
 

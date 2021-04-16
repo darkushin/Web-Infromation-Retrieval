@@ -1,4 +1,6 @@
-package webdata;
+//package webdata;
+
+import java.util.Enumeration;
 
 public class IndexReader {
 
@@ -58,8 +60,8 @@ public class IndexReader {
 	* Note that the integers should be sorted by id
 	*
 	* Returns an empty Enumeration if there are no reviews containing this token
-	* /
-	public Enumeration<Integer> getReviewsWithToken(String token) {}
+	*/
+	public Enumeration<Integer> getReviewsWithToken(String token) {return null;}
 
 	/**
 	* Return the number of product reviews available in the system
