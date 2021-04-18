@@ -2,6 +2,8 @@
 
 import java.util.Enumeration;
 
+import java.util.Enumeration;
+
 public class IndexReader {
 
 	/**
