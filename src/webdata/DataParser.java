@@ -5,8 +5,8 @@ import java.util.*;
 
 
 public class DataParser {
-    ArrayList<Hashtable<String, String>> all_reviews = new ArrayList<>();
-    private static final List<String> INTEREST_FIELDS = Arrays.asList("productId", "score", "helpfulness", "text");
+    ArrayList<Hashtable<String, String>> allReviews = new ArrayList<>();
+    public static final List<String> INTEREST_FIELDS = Arrays.asList("productId", "score", "helpfulness", "text");
 
 
     /**
@@ -21,7 +21,7 @@ public class DataParser {
         while((line = br.readLine()) != null) {
             if (line.contains("product/productId")){
                 if (!review.equals("")){
-                    all_reviews.add(__parse_review(review));
+                    allReviews.add(__parse_review(review));
                 }
                 review = line;
             }
@@ -29,7 +29,7 @@ public class DataParser {
                 review += line;
             }
         }
-        all_reviews.add(__parse_review(review));  // add the last review
+        allReviews.add(__parse_review(review));  // add the last review
     }
 
     /**
