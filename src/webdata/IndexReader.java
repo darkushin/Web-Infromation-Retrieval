@@ -1,4 +1,4 @@
-//package webdata;
+package webdata;
 
 import java.util.Enumeration;
 
@@ -7,7 +7,7 @@ import java.util.Enumeration;
 public class IndexReader {
 
 	/**
-	* Creates an IndexReader which will read from the given directory
+	* Creates an webdata.IndexReader which will read from the given directory
 	*/
 	public IndexReader(String dir) {}
 	
