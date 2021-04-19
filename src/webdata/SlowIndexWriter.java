@@ -1,6 +1,5 @@
 package webdata;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 
@@ -8,8 +7,8 @@ public class SlowIndexWriter {
 	// token_dict is a dictionary used for creating the tokens index. The keys are the different tokens in the collection
 	// and the values of each token is a list of integers, where the first element is the collection frequency of the word,
 	// and the rest of the elements are the ids of the files containing this word.
-	private HashMap<String, ArrayList<Integer>> token_dict = new HashMap<>();
-	private HashMap<String, HashSet<Integer>> productIds;
+	private HashMap<String, ArrayList<Integer>> token_dict;
+	private HashMap<String, ArrayList<Integer>> productIds;
 	private HashMap<Integer, ArrayList<String>> reviewIds;
 
 	public SlowIndexWriter(String inputFile, String dir) throws IOException {
@@ -39,7 +38,6 @@ public class SlowIndexWriter {
 			int length = addReviewText(dataParser.allReviews.get(i).get("text"), i);
 			addReviewId(i, dataParser.allReviews.get(i), length);
 		}
-		System.out.println("test");
 	}
 
 	/**
@@ -72,7 +70,7 @@ public class SlowIndexWriter {
 				}
 			}
 			else{
-				token_dict.put(token, new ArrayList(Arrays.asList(1, reviewIndex)));
+				token_dict.put(token, new ArrayList<>(Arrays.asList(1, reviewIndex)));
 			}
 		}
 		return reviewLength;
@@ -80,9 +78,12 @@ public class SlowIndexWriter {
 
 	private void addProductId(String productId, int reviewId) {
 		if (!productIds.containsKey(productId)) {
-			productIds.put(productId, new HashSet<Integer>());
+			productIds.put(productId, new ArrayList<>(Arrays.asList(reviewId, 0)));
 		}
-		productIds.get(productId).add(reviewId);
+		else {
+			ArrayList<Integer> product = productIds.get(productId);
+			product.set(1, product.get(1) + 1);
+		}
 	}
 
 	private void addReviewId(int reviewId, HashMap<String, String> review, int length) {
