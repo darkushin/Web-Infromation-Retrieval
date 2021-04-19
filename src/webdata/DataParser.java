@@ -5,7 +5,7 @@ import java.util.*;
 
 
 public class DataParser {
-    ArrayList<Hashtable<String, String>> allReviews = new ArrayList<>();
+    ArrayList<HashMap<String, String>> allReviews = new ArrayList<>();
     public static final List<String> INTEREST_FIELDS = Arrays.asList("productId", "score", "helpfulness", "text");
 
 
@@ -38,9 +38,9 @@ public class DataParser {
      * @param review: the review that should be parsed.
      * @return a hash table where the keys are the relevant fields mentioned above and their corresponding values.
      */
-    private static Hashtable<String, String> __parse_review(String review){
+    private static HashMap<String, String> __parse_review(String review){
         List<String> fields = Arrays.asList(review.split("review/"));
-        Hashtable<String, String> review_fields = new Hashtable<String, String>();
+        HashMap<String, String> review_fields = new HashMap<String, String>();
 
         review_fields.put("productId", fields.get(0).split(":")[1]);
         for (int i=1; i<fields.size(); i++){
