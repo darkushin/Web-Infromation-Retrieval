@@ -32,6 +32,7 @@ public class SlowIndexWriter {
 	*/
 	public void slowWrite(String inputFile, String dir) throws IOException {
 		createDicts(inputFile);
+		createProductIndex();
 		createDir(dir);
 		createTokenIndex(4, dir);
 	}
@@ -69,7 +70,7 @@ public class SlowIndexWriter {
 	}
 
 	private void createDicts(String inputFile) throws IOException {
-		productIds = new HashMap<>();
+		productIds = new TreeMap<>();
 		tokenDict = new HashMap<>();
 		reviewIds = new HashMap<>();
 
@@ -230,9 +231,30 @@ public class SlowIndexWriter {
 		reviewIds.get(reviewId).add(String.valueOf(length));
 	}
 
+	private void createProductIndex() {
+		class ProductInfo {
+			public String productId;
+			public byte[] data;
+		}
+//		ArrayList<ProductInfo> productIndex = new ArrayList<>(productIds.size());
+		ProductInfo[] productIndex = new ProductInfo[productIds.size()];
+		int i = 0;
+		for (Map.Entry<String, ArrayList<Integer>> entry : productIds.entrySet()) {
+			String encoding = DeltaEncoder.gamma_encode(entry.getValue().get(0)) +
+					DeltaEncoder.gamma_encode(entry.getValue().get(1)); // TODO: Encoding of 0
+			byte[] data = DeltaEncoder.toByteArray(encoding);
+			ProductInfo prodInfo = new ProductInfo();
+			prodInfo.productId = entry.getKey();
+			prodInfo.data = data;
+			productIndex[i] = prodInfo;
+			i++;
+		}
+
+	}
+
 	public static void main(String[] args) throws IOException {
-		String inputFile = "/Users/darkushin/Downloads/100.txt";
-		String dir = "/Users/darkushin/Desktop/Web-Infromation-Retrieval/data-index";
+		String inputFile = "./1000.txt";
+		String dir = "./data-index";
 
 		SlowIndexWriter slw = new SlowIndexWriter(inputFile, dir);
 

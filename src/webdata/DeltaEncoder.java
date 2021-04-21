@@ -1,6 +1,7 @@
 package webdata;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.LinkedList;
 
@@ -13,6 +14,19 @@ public class DeltaEncoder {
     public static String delta_encode(int num){
         String offset = Integer.toBinaryString(num);
         return gamma_encode(offset.length()) + offset.substring(1);
+    }
+
+    public static byte[] toByteArray(String encoding) {
+        byte[] ret = new BigInteger(encoding, 2).toByteArray();
+        if (ret.length * 8 == encoding.length() + 8) {
+            return Arrays.copyOfRange(ret, 1, ret.length);
+        } else {
+            return ret;
+        }
+    }
+
+    public static BitSet toBitSet(String encoding) {
+        return BitSet.valueOf(toByteArray(encoding));
     }
 
     public static void main(String[] args){
