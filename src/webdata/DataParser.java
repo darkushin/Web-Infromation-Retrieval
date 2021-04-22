@@ -42,10 +42,10 @@ public class DataParser {
         List<String> fields = Arrays.asList(review.split("review/"));
         HashMap<String, String> review_fields = new HashMap<String, String>();
 
-        review_fields.put("productId", fields.get(0).split(":")[1]);
+        review_fields.put("productId", fields.get(0).split(": ")[1]); // TODO: Added the space. Needs to be done for the other fields as well.
         for (int i=1; i<fields.size(); i++){
             String field = fields.get(i);
-            List<String> field_value = Arrays.asList(field.split(":"));
+            List<String> field_value = Arrays.asList(field.split(": "));
             if (INTEREST_FIELDS.contains(field_value.get(0))) {
                 review_fields.put(field_value.get(0), String.join(":", field_value.subList(1, field_value.size())));
             }

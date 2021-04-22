@@ -16,7 +16,7 @@ public class SlowIndexWriter {
 	// and the values of each token is a list of integers, where the first element is the collection frequency of the word,
 	// and the rest of the elements are the ids of the files containing this word.
 	private HashMap<String, ArrayList<Integer>> tokenDict;
-	private HashMap<String, ArrayList<Integer>> productIds;
+	private TreeMap<String, ArrayList<Integer>> productIds;
 	private HashMap<Integer, ArrayList<String>> reviewIds;
 
 	public SlowIndexWriter(String inputFile, String dir) throws IOException {
@@ -232,24 +232,15 @@ public class SlowIndexWriter {
 	}
 
 	private void createProductIndex() {
-		class ProductInfo {
-			public String productId;
-			public byte[] data;
-		}
-//		ArrayList<ProductInfo> productIndex = new ArrayList<>(productIds.size());
-		ProductInfo[] productIndex = new ProductInfo[productIds.size()];
-		int i = 0;
-		for (Map.Entry<String, ArrayList<Integer>> entry : productIds.entrySet()) {
-			String encoding = DeltaEncoder.gamma_encode(entry.getValue().get(0)) +
-					DeltaEncoder.gamma_encode(entry.getValue().get(1)); // TODO: Encoding of 0
-			byte[] data = DeltaEncoder.toByteArray(encoding);
-			ProductInfo prodInfo = new ProductInfo();
-			prodInfo.productId = entry.getKey();
-			prodInfo.data = data;
-			productIndex[i] = prodInfo;
-			i++;
-		}
+		LinkedList<String> ids = new LinkedList<>(productIds.keySet());
+		ArrayList<ArrayList<Integer>> vals = new ArrayList<>(productIds.values());
 
+		KFront kf = new KFront();
+		kf.createKFront(4, ids);
+		for (int i = 0; i < vals.size(); i++) {
+			kf.getTable().get(i).addAll(vals.get(i));
+		}
+		System.out.println("yo");
 	}
 
 	public static void main(String[] args) throws IOException {
