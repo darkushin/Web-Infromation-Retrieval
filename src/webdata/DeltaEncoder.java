@@ -3,18 +3,25 @@ package webdata;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.LinkedList;
 
 // TODO: Handle encoding of 0
 public class DeltaEncoder {
-    public static String gamma_encode(int num){
+    public static String gammaEncode(int num) {
         String offset = Integer.toBinaryString(num);
         return "1".repeat(offset.length() - 1) + "0" + offset.substring(1);
     }
 
-    public static String delta_encode(int num){
+    public static String deltaEncode(int num) {
         String offset = Integer.toBinaryString(num);
-        return gamma_encode(offset.length()) + offset.substring(1);
+        return gammaEncode(offset.length()) + offset.substring(1);
+    }
+
+    public static int gammeDecode(byte[] code) {
+        return 0;
+    }
+
+    public static int deltaDecode(byte[] code) {
+        return 0;
     }
 
     public static byte[] toByteArray(String encoding) {
@@ -30,6 +37,11 @@ public class DeltaEncoder {
         return BitSet.valueOf(toByteArray(encoding));
     }
 
+    /*
+    # TODO: for testing, remove later.
+     */
+    public static void main(String args[]) {
 
+    }
 }
 

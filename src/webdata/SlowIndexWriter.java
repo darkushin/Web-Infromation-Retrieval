@@ -2,11 +2,7 @@ package webdata;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
-import java.lang.Object;
-import java.nio.file.Files;
 
 public class SlowIndexWriter {
 	// tokenDict is a dictionary used for creating the tokens index. The keys are the different tokens in the collection
@@ -184,7 +180,7 @@ public class SlowIndexWriter {
 
 			StringBuilder stringCodes = new StringBuilder();
 			for (int num : idsList) {
-				String code = DeltaEncoder.delta_encode(num);
+				String code = DeltaEncoder.deltaEncode(num);
 				stringCodes.append(code);
 			}
 			byte[] codeBytes = new BigInteger(stringCodes.toString(), 2).toByteArray();
@@ -235,6 +231,32 @@ public class SlowIndexWriter {
 		for (int i = 0; i < vals.size(); i++) {
 			kf.getTable().get(i).addAll(vals.get(i));
 		}
+
+		ProductIndex pIndex = new ProductIndex(4);
+		pIndex.insertData(kf.getTable(), kf.getConcatString());
+
+		// Test that all words can be successfully retrieved & searched for
+		for (int i = 0; i < kf.getTable().size(); i++) {
+			String srch = pIndex.getWordAt(i);
+			if (!srch.equals(ids.get(i))) {
+				System.out.println("Failed to get word " + ids.get(i) + " (" + i + ")");
+			}
+			int idx = pIndex.search(srch);
+			if (i != idx) {
+				System.out.println("Failed to search for " + ids.get(i) + " (" + i + ")");
+			}
+		}
+		// Search for things that shouldn't be in the dictionary
+		if (pIndex.search("AAAAAAAA") != -1) {
+			System.out.println("Oh no!");
+		}
+		if (pIndex.search("ZZZZZZZZ") != -1) {
+			System.out.println("Oh no!");
+		}
+		if (pIndex.search("B0000044") != -1) {
+			System.out.println("Oh no!");
+		}
+
 		System.out.println("yo");
 	}
 
