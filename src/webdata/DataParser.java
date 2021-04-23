@@ -17,19 +17,19 @@ public class DataParser {
     public DataParser(String inputFile) throws IOException {
         BufferedReader br = new BufferedReader(new FileReader(inputFile));
         String line;
-        String review = "";
+        StringBuilder review = new StringBuilder();
         while((line = br.readLine()) != null) {
             if (line.contains("product/productId")){
-                if (!review.equals("")){
-                    allReviews.add(__parse_review(review));
+                if (!review.toString().equals("")){
+                    allReviews.add(parse_review(review.toString()));
                 }
-                review = line;
+                review = new StringBuilder(line);
             }
             else{
-                review += line;
+                review.append(line);
             }
         }
-        allReviews.add(__parse_review(review));  // add the last review
+        allReviews.add(parse_review(review.toString()));  // add the last review
     }
 
     /**
@@ -38,7 +38,7 @@ public class DataParser {
      * @param review: the review that should be parsed.
      * @return a hash table where the keys are the relevant fields mentioned above and their corresponding values.
      */
-    private static HashMap<String, String> __parse_review(String review){
+    private static HashMap<String, String> parse_review(String review){
         List<String> fields = Arrays.asList(review.split("review/"));
         HashMap<String, String> review_fields = new HashMap<String, String>();
 
