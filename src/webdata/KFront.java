@@ -10,15 +10,24 @@ import java.util.List;
 public class KFront {
     private List<List<Integer>> table;
     private String concatString;
+    private boolean saveLength;
 
     public KFront() {
         table = new LinkedList<>();
         concatString = null;
+        saveLength = false;
     }
 
     public KFront(List<List<Integer>> outputTable) {
         table = outputTable;
         concatString = null;
+        saveLength = false;
+    }
+
+    public KFront(boolean saveLength) {
+        table = new LinkedList<>();
+        concatString = null;
+        this.saveLength = saveLength;
     }
 
     public String getConcatString() {
@@ -43,7 +52,7 @@ public class KFront {
         int offset = 0;
         String prevString = null;
         for (String str : strings) {
-            ArrayList<Integer> entry = new ArrayList<>();  // Table entries: 0-pointer, 1-prefix size
+            ArrayList<Integer> entry = new ArrayList<>();  // Table entries: 0-pointer, 1-prefix size, 2-string length(Optional)
             if (offset == 0) {
                 entry.add(sBuilder.length());  // Pointer to string
                 entry.add(null);  // Prefix size
@@ -59,6 +68,9 @@ public class KFront {
             if (offset == k) {
                 offset = 0;
                 prevString = null;
+            }
+            if (this.saveLength){
+                entry.add(str.length());  // Save the Str length
             }
             table.add(entry);
         }

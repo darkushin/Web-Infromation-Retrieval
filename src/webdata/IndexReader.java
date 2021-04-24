@@ -1,15 +1,27 @@
 package webdata;
 
-import java.util.Enumeration;
-
+import java.io.*;
 import java.util.Enumeration;
 
 public class IndexReader {
+	TokensIndex tokenIndex = null;
 
 	/**
 	* Creates an webdata.IndexReader which will read from the given directory
 	*/
-	public IndexReader(String dir) {}
+	public IndexReader(String dir) {
+		ObjectInputStream in = null;
+		try {
+			FileInputStream fileIn = new FileInputStream(dir + "/tokens_index.txt");
+			in = new ObjectInputStream(fileIn);
+			tokenIndex = (TokensIndex) in.readObject();
+			in.close();
+			fileIn.close();
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		System.out.println("In index reader!");
+	}
 	
 	/**
 	* Returns the product identifier for the given review
@@ -45,7 +57,15 @@ public class IndexReader {
 	* Return the number of reviews containing a given token (i.e., word)
 	* Returns 0 if there are no reviews containing this token
 	*/
-	public int getTokenFrequency(String token) {return 0;}
+	public int getTokenFrequency(String token) {
+		token = token.toLowerCase();
+		int currentTokenIdx = tokenIndex.search(token);
+		if (currentTokenIdx == -1){
+			return 0;
+		} else {
+			return 0; //tokenIndex.get().get(currentTokenIdx).getFrequency();
+		}
+	}
 
 	/**
 	* Return the number of times that a given token (i.e., word) appears in
@@ -83,4 +103,12 @@ public class IndexReader {
 	* Returns an empty Enumeration if there are no reviews for this product
 	*/
 	public Enumeration<Integer> getProductReviews(String productId) {return null;}
+
+	public static void main(String[] args) {
+		String dir = "./data-index";
+
+		IndexReader indexReader = new IndexReader(dir);
+		int i = indexReader.getTokenFrequency("10");
+		System.out.println(i);
+	}
 }

@@ -2,6 +2,8 @@ package webdata;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 public class SlowIndexWriter {
@@ -25,8 +27,8 @@ public class SlowIndexWriter {
 	*/
 	public void slowWrite(String inputFile) throws IOException {
 		createDicts(inputFile);
-		createProductIndex();
 		createDir();
+		createProductIndex();
 		createTokenIndex();
 	}
 
@@ -39,13 +41,10 @@ public class SlowIndexWriter {
 	 * Create a new directory in the path specified in the instance initialization.
 	 */
 	private void createDir(){
-		try{
-			File folder = new File(this.dir);
-			if (!folder.exists()){
-				boolean bool = folder.mkdir();
-//				if (!bool){}  //todo: raise exception if folder creation failed
-			}
-		} catch (Exception e){
+		Path path = Path.of(this.dir);
+		try {
+			Files.createDirectories(path);
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
@@ -76,7 +75,7 @@ public class SlowIndexWriter {
 	}
 
 	/**
-	 * Split the given text of the ith review into tokens and add them to the tokens dictionary.
+	 * Split the given text of the i-th review into tokens and add them to the tokens dictionary.
 	 * @param reviewText the text of the review that should be added.
 	 * @param reviewIndex the number of the given review.
 	 * @return the number of tokens in the given review text.
@@ -106,102 +105,6 @@ public class SlowIndexWriter {
 		return reviewLength;
 	}
 
-	/**
-	 * Creates the index file for the tokens in the collection.
-	 * The index is created using the k-1-in-k front coding method.
-	 * @param k the size of the groups that should be used.
-	 * @param dir the directory in which the index should be saved.
-	 */
-//	private void createTokenIndex(int k, String dir){
-//		try {
-//			Map<String, ArrayList<Integer>> sortedTokens = new TreeMap<String, ArrayList<Integer>>(tokenDict);
-//			ArrayList<ArrayList<Integer>> tokenInfo = new ArrayList<ArrayList<Integer>>(); // each entry is a token and contains the token's frequency, collection frequency, word length, prefix length/string offset, inverted index pointer
-//			StringBuilder encodedString = new StringBuilder();
-//			RandomAccessFile invertedIndexFile = new RandomAccessFile(dir + "/tokens_inverted_index.txt", "rw");
-//			String groupString = "";
-//			String prevToken = null;
-//			int tokenOffset = 0;
-//			for (Map.Entry<String, ArrayList<Integer>> entry : sortedTokens.entrySet()) {
-//				String token = entry.getKey();
-//				ArrayList<Integer> tokenValues = entry.getValue();
-//				int tokenFrequency = tokenValues.size() - 1;
-//				int tokenCollectionFrequency = tokenValues.get(0);
-//				int tokenLength = token.length();
-//				int tokenInvertedIndexPtr = (int) invertedIndexFile.getFilePointer();  // todo: check about this casting! find a way to avoid it
-//
-//				// add the reviewIds of the given token to the inverted index file:
-//				saveInvertedIndex(invertedIndexFile, tokenValues.subList(1, tokenValues.size()));
-//
-//				if (tokenOffset == 0) {  // first token in group, save the entire token
-//					groupString = token;
-//					int stringOffset = encodedString.length();
-//					tokenInfo.add(new ArrayList<>(Arrays.asList(tokenFrequency, tokenCollectionFrequency, tokenLength, stringOffset, tokenInvertedIndexPtr)));
-//
-//				} else {
-//					String commonPrefix = findCommonPrefix(token, prevToken);
-//					int prefixLength = commonPrefix.length();
-//					groupString += token.substring(prefixLength);
-//					tokenInfo.add(new ArrayList<>(Arrays.asList(tokenFrequency, tokenCollectionFrequency, tokenLength, prefixLength, tokenInvertedIndexPtr)));
-//				}
-//
-//				prevToken = token;
-//				tokenOffset += 1;
-//				if (tokenOffset == k) {
-//					tokenOffset = 0;
-//					encodedString.append(groupString);
-//				}
-//			}
-//
-//			if (tokenOffset != 0) {  // need to add last groupString to the encoded string
-//				encodedString.append(groupString);
-//			}
-//
-//			// save the encodedString at the index folder:
-//			saveFile(dir, "token_index_k=4", encodedString.toString());
-//
-//		} catch (Exception e){
-//			System.out.println("Error occurred while creating the tokens dictionary");
-//			e.printStackTrace();
-//		}
-//
-//	}
-
-	/**
-	 * Encodes the integers given in the integer list using delta encoding, and saves them in the given invertedIndexFile.
-	 * @param invertedIndexFile the file in which the delta encoded numbers should be saved.
-	 * @param idsList a list with number that should be encoded and saved in the inverted index file.
-	 */
-	private void saveInvertedIndex(RandomAccessFile invertedIndexFile, List<Integer> idsList) {
-		try {
-			// change the idsList to a difference list (except for the first id):
-			for (int i = idsList.size()-1; i>0; i--){
-				idsList.set(i, idsList.get(i) - idsList.get(i-1));
-			}
-
-			StringBuilder stringCodes = new StringBuilder();
-			for (int num : idsList) {
-				String code = DeltaEncoder.deltaEncode(num);
-				stringCodes.append(code);
-			}
-			byte[] codeBytes = new BigInteger(stringCodes.toString(), 2).toByteArray();
-			if (codeBytes[0] == 0){codeBytes = Arrays.copyOfRange(codeBytes, 1, codeBytes.length);}  // todo: check if this condition is met
-			invertedIndexFile.write(codeBytes);
-		} catch (Exception e){
-			System.out.println("Error occurred while save invertedIndex bytes");
-			e.printStackTrace();
-		}
-	}
-
-	private String findCommonPrefix(String s1, String s2){
-		StringBuilder commonPrefix = new StringBuilder();
-		int i = 0;
-		while (i < s1.length() && i < s2.length() && s1.charAt(i) == s2.charAt(i)){
-			commonPrefix.append(s1.charAt(i));
-			i++;
-		}
-		return commonPrefix.toString();
-	}
-
 	private void addProductId(String productId, int reviewId) {
 		if (!productIds.containsKey(productId)) {
 			productIds.put(productId, new ArrayList<>(Arrays.asList(reviewId, 0)));
@@ -225,14 +128,14 @@ public class SlowIndexWriter {
 	private void createProductIndex() {
 		LinkedList<String> ids = new LinkedList<>(productIds.keySet());
 		ArrayList<ArrayList<Integer>> vals = new ArrayList<>(productIds.values());
-
+		int k = 4;
 		KFront kf = new KFront();
-		kf.createKFront(4, ids);
+		kf.createKFront(k, ids);
 		for (int i = 0; i < vals.size(); i++) {
-			kf.getTable().get(i).addAll(vals.get(i));
+			kf.getTable().get(i).addAll(vals.get(i));  // todo: I added a setValue() function to KFront. we should use it here
 		}
 
-		ProductIndex pIndex = new ProductIndex(4);
+		ProductIndex pIndex = new ProductIndex(k);
 		pIndex.insertData(kf.getTable(), kf.getConcatString());
 
 		// Test that all words can be successfully retrieved & searched for
@@ -260,38 +163,32 @@ public class SlowIndexWriter {
 		System.out.println("yo");
 	}
 
+	/**
+	 * Creates the index file for the tokens in the collection.
+	 * The index is created using the k-1-in-k front coding method.
+	 */
 	private void createTokenIndex(){
 		LinkedList<String> tokens = new LinkedList<>(tokenDict.keySet());
 		ArrayList<ArrayList<Integer>> vals = new ArrayList<>(tokenDict.values());
-		KFront kf = new KFront();
-		kf.createKFront(8, tokens);
+		int k = 8;
+
+		KFront kf = new KFront(true);
+		kf.createKFront(k, tokens);
 		saveFile("tokens_concatenated_string", kf.getConcatString());
 
-		RandomAccessFile invertedIndexFile = null;
-		try {
-			invertedIndexFile = new RandomAccessFile(this.dir + "/tokens_inverted_index.txt", "rw");
-		} catch (FileNotFoundException e) {
-			System.out.println("Error occurred while creating the tokens_inverted_index file");
-			e.printStackTrace();
-		}
+		TokensIndex tIdx = new TokensIndex(k, this.dir);
+		tIdx.insertData(kf.getTable(), vals, kf.getConcatString());
 
-		int frequency;
-		int collectionFrequency;
-		int invertedIndexPtr;
-		int length;
-		for (int i = 0; i < tokens.size(); i ++){
-			ArrayList<Integer> tokenValues = vals.get(i);
-			frequency = tokenValues.size() - 1;
-			collectionFrequency = tokenValues.get(0);
-			length = tokens.get(i).length();
-			try {
-				invertedIndexPtr = (int) invertedIndexFile.getFilePointer();  // todo: check about this casting! find a way to avoid it
-				saveInvertedIndex(invertedIndexFile, tokenValues.subList(1, tokenValues.size()));
-				kf.setValue(i, Arrays.asList(frequency, collectionFrequency, length, invertedIndexPtr));
-			} catch (IOException e) {
-				System.out.println("Error occurred while accessing the tokens_inverted_index file");
-				e.printStackTrace();
-			}
+		// Save the tokens index:
+		FileOutputStream fileOut = null;
+		try {
+			fileOut = new FileOutputStream(this.dir + "/tokens_index.txt");
+			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+			out.writeObject(tIdx);
+			out.close();
+			fileOut.close();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
