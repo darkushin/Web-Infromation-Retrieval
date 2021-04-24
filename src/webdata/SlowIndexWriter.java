@@ -133,34 +133,12 @@ public class SlowIndexWriter {
 		kf.createKFront(k, ids);
 		for (int i = 0; i < vals.size(); i++) {
 			kf.getTable().get(i).addAll(vals.get(i));  // todo: I added a setValue() function to KFront. we should use it here
+//			kf.setValue(i, vals.get(i));
 		}
 
 		ProductIndex pIndex = new ProductIndex(k);
 		pIndex.insertData(kf.getTable(), kf.getConcatString());
-
-		// Test that all words can be successfully retrieved & searched for
-		for (int i = 0; i < kf.getTable().size(); i++) {
-			String srch = pIndex.getWordAt(i);
-			if (!srch.equals(ids.get(i))) {
-				System.out.println("Failed to get word " + ids.get(i) + " (" + i + ")");
-			}
-			int idx = pIndex.search(srch);
-			if (i != idx) {
-				System.out.println("Failed to search for " + ids.get(i) + " (" + i + ")");
-			}
-		}
-		// Search for things that shouldn't be in the dictionary
-		if (pIndex.search("AAAAAAAA") != -1) {
-			System.out.println("Oh no!");
-		}
-		if (pIndex.search("ZZZZZZZZ") != -1) {
-			System.out.println("Oh no!");
-		}
-		if (pIndex.search("B0000044") != -1) {
-			System.out.println("Oh no!");
-		}
-
-		System.out.println("yo");
+		saveToDir("products_index.txt", pIndex);
 	}
 
 	/**
@@ -185,6 +163,19 @@ public class SlowIndexWriter {
 			fileOut = new FileOutputStream(this.dir + "/tokens_index.txt");
 			ObjectOutputStream out = new ObjectOutputStream(fileOut);
 			out.writeObject(tIdx);
+			out.close();
+			fileOut.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void saveToDir(String name, Object obj) {
+		FileOutputStream fileOut = null;
+		try {
+			fileOut = new FileOutputStream(this.dir + "/" + name);
+			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+			out.writeObject(obj);
 			out.close();
 			fileOut.close();
 		} catch (IOException e) {

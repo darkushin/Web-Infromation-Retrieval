@@ -5,21 +5,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 
-// TODO: Handle encoding of 0
 public class Encoding {
-//    private static final byte[] masks = { -128, 64, 32, 16, 8, 4, 2, 1 };
-
+    //TODO Check that adding 1 (to encode 0) doesn't mess things up.
     public static String gammaEncode(int num) {
-        String offset = Integer.toBinaryString(num);
+        String offset = Integer.toBinaryString(num + 1);
         return "1".repeat(offset.length() - 1) + "0" + offset.substring(1);
     }
 
     public static String deltaEncode(int num) {
-        String offset = Integer.toBinaryString(num);
-        return gammaEncode(offset.length()) + offset.substring(1);
+        String offset = Integer.toBinaryString(num + 1);
+        return gammaEncode(offset.length() - 1) + offset.substring(1);
     }
-
-
 
     public static ArrayList<Integer> gammaDecode(String encoding) {
         ArrayList<Integer> output = new ArrayList<>();
@@ -27,7 +23,7 @@ public class Encoding {
         while (bitsRead < encoding.length()) {
             int length = encoding.substring(bitsRead).indexOf('0'); // Find the first 0
             int offsetLoc = bitsRead + length + 1;
-            output.add(Integer.parseInt("1" + encoding.substring(offsetLoc, offsetLoc + length), 2));
+            output.add(Integer.parseInt("1" + encoding.substring(offsetLoc, offsetLoc + length), 2) - 1);
             bitsRead = offsetLoc + length;
         }
         return output;
@@ -42,7 +38,7 @@ public class Encoding {
             int actualLength = Integer.parseInt("1" + encoding.substring(offsetLoc, offsetLoc + length), 2);
             bitsRead = offsetLoc + length;
 
-            output.add(Integer.parseInt("1" + encoding.substring(bitsRead, bitsRead + actualLength - 1), 2));
+            output.add(Integer.parseInt("1" + encoding.substring(bitsRead, bitsRead + actualLength - 1), 2) - 1);
             bitsRead += actualLength - 1;
         }
         return output;
