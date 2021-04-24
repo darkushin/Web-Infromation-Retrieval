@@ -1,10 +1,15 @@
 package webdata;
 
-import java.io.Serializable;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
+// TODO see createProductIndex in the writer for usage example. We can use some of this code for the token dict as well.
 public class ProductIndex implements Serializable {
+    /*
+     TODO I ended up using short/int instead of a byte array with encoding. Since the byte array will use a pointer
+      anyway, we might as well use an int.
+     */
     private class ProductInfo {
         private short stringInfo; // This is either a pointer to the concatenated string, or a prefix size.
         private int reviewId;
@@ -20,7 +25,7 @@ public class ProductIndex implements Serializable {
 
     private ArrayList<ProductInfo> data;
     private String dictString;
-    private final int k;
+    private int k;
 
     public ProductIndex(int k) {
         data = new ArrayList<>();
@@ -46,12 +51,17 @@ public class ProductIndex implements Serializable {
         }
     }
 
+    /*
+    TODO Retrieves the actual word at index i. Product ids have constant length, so to use this function in the token
+     dict, just replace WORD_LENGTH with the actual length of the relevant entry. There's probably a more-efficient way
+     of implementing this function..
+     */
     public String getWordAt(int index) {
         int blockStart = index - (index % k);
         int startStringPtr = data.get(blockStart).stringInfo;
         // Add the first word of the block
         StringBuilder str = new StringBuilder(dictString.substring(startStringPtr, startStringPtr +  WORD_LENGTH));
-        int read = WORD_LENGTH;
+        int read = WORD_LENGTH;  // Tracks how much was read from the string
         int offset = 0;
         while (blockStart + offset != index) {
             offset++;
@@ -63,6 +73,9 @@ public class ProductIndex implements Serializable {
         return str.toString();
     }
 
+    /*
+    TODO A binary search over the blocks. I think this can be used as-is in the token dict.
+     */
     public int search(String str) {
         boolean found = false;
         int high = data.size() / k;
@@ -94,5 +107,21 @@ public class ProductIndex implements Serializable {
         }
 
         return -1;
+    }
+
+    // TODO Didn't test this yet.
+    @Serial
+    private void readObject(ObjectInputStream aInputStream) throws ClassNotFoundException, IOException
+    {
+        k = aInputStream.readInt();
+        dictString = aInputStream.readUTF();
+        data = (ArrayList<ProductInfo>) aInputStream.readObject();
+    }
+
+    private void writeObject(ObjectOutputStream aOutputStream) throws IOException
+    {
+        aOutputStream.writeInt(k);
+        aOutputStream.writeUTF(dictString);
+        aOutputStream.writeObject(data);
     }
 }
