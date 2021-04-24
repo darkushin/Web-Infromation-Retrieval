@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 
 // TODO: Handle encoding of 0
-public class DeltaEncoder {
+public class Encoding {
 //    private static final byte[] masks = { -128, 64, 32, 16, 8, 4, 2, 1 };
 
     public static String gammaEncode(int num) {
