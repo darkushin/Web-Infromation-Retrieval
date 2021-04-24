@@ -118,10 +118,19 @@ public class ProductIndex implements Serializable {
         data = (ArrayList<ProductInfo>) aInputStream.readObject();
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream aOutputStream) throws IOException
     {
         aOutputStream.writeInt(k);
         aOutputStream.writeUTF(dictString);
         aOutputStream.writeObject(data);
+    }
+
+    public int getReviewId(int index) {
+        return data.get(index).reviewId;
+    }
+
+    public int getReviewSpan(int index) {
+        return data.get(index).spanLength;
     }
 }
