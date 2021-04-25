@@ -1,5 +1,6 @@
 package webdata;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -80,15 +81,39 @@ public class Encoding {
     }
 
     public static byte[] groupVarintEncode(int[] nums) {
-        ByteBuffer bb = ByteBuffer.allocate(20);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        out.write(0);
+        byte length = 0;
         for (int i = 0; i < nums.length; i++) {
-            bb.putInt(nums[i]);
+            byte[] numAsBytes =  ByteBuffer.allocate(4).putInt(nums[i]).array();
+            byte numLength = -1;
+            for (int j = 0; j < numAsBytes.length; j++) {
+                if (numAsBytes[j] != 0) {
+                    out.write(numAsBytes[j]);
+                    numLength++;
+                }
+            }
+            length = (byte) (length | (byte) (numLength << 2*(3 - i)));
         }
-        return null;
+        byte[] output = out.toByteArray();
+        output[0] = length;
+        return output;
     }
 
     public static int[] groupVarintDecode(byte[] encoding) {
-        return null;
+        byte lengths = encoding[0];
+        int[] output = new int[4];
+        int bytesRead = 1;
+        for (int i = 0; i < 4; i++) {
+            int bytesToRead = 1 + (lengths >> (2 * (3 - i))) & 3;
+            byte[] o = new byte[bytesToRead];
+            for (int b = 0; b < bytesToRead; b++) {
+                o[b] = encoding[bytesRead + b];
+            }
+            bytesRead += bytesToRead;
+            output[i] = new BigInteger(o).intValue();
+        }
+        return output;
     }
 
     /**
@@ -120,6 +145,12 @@ public class Encoding {
         fromarr = byteToString(bytearr);
         nums = deltaDecode(bytearr);
         System.out.println(nums);
+
+        // Group Varint test
+        int[] numgroup = {900000, 20, 450, 9};
+        byte[] bytegroup = groupVarintEncode(numgroup);
+        int[] decoded = groupVarintDecode(bytegroup);
+        System.out.println("Done.");
     }
 }
 
