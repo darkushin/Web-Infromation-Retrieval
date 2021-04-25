@@ -171,7 +171,43 @@ public class SlowIndexWriter {
 	}
 
 	private void createReviewIndex() {
-		System.out.println("yo");
+		// Revise the review dictionary to the correct structure & change productIDs to product index
+		LinkedList<List<Integer>> dictValues = new LinkedList<>();
+		for (int review : reviewIds.keySet()) {
+			ArrayList<String> vals = reviewIds.get(review);
+			ArrayList<Integer> new_vals = new ArrayList<>(List.of(0, 0, 0, 0, 0));
+			new_vals.set(ReviewIndex.PRODUCTID_INDEX, productIds.headMap(vals.get(0)).size());
+			String[] helpf = vals.get(2).split("/");
+			new_vals.set(ReviewIndex.HELPFNUM_INDEX, Integer.parseInt(helpf[0]));
+			new_vals.set(ReviewIndex.HELPFDNOM_INDEX, Integer.parseInt(helpf[1]));
+			new_vals.set(ReviewIndex.REVIEWLENGTH_INDEX,  Integer.parseInt(vals.get(3)));
+			new_vals.set(ReviewIndex.SCORE_INDEX,  (int) Float.parseFloat(vals.get(1)));
+			dictValues.add(new_vals);
+		}
+		ReviewIndex rIndex = new ReviewIndex();
+		rIndex.insertData(dictValues);
+
+		// TODO Testing, remove this
+		for (int i = 0; i < dictValues.size(); i++) {
+			List<Integer> entry = dictValues.get(i);
+			if (entry.get(0) != rIndex.getProductNum(i)) {
+				System.out.println("!");
+			}
+			if (entry.get(1) != rIndex.getHelpfulnessNumerator(i)) {
+				System.out.println("!!");
+			}
+			if (entry.get(2) != rIndex.getHelpfulnessDenominator(i)) {
+				System.out.println("!!!");
+			}
+			if (entry.get(3) != rIndex.getLength(i)) {
+				System.out.println("!!!!");
+			}
+			if (entry.get(4) != rIndex.getScore(i)) {
+				System.out.println("!!!!!");
+			}
+		}
+
+		saveToDir("review_index.txt", rIndex);
 	}
 
 	private void saveToDir(String name, Object obj) {
@@ -188,7 +224,7 @@ public class SlowIndexWriter {
 	}
 
 	public static void main(String[] args) throws IOException {
-		String inputFile = "./100.txt";
+		String inputFile = "./1000.txt";
 		String dir = "./data-index";
 
 		SlowIndexWriter slw = new SlowIndexWriter();

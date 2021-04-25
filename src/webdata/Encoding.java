@@ -91,6 +91,9 @@ public class Encoding {
                 if (numAsBytes[j] != 0) {
                     out.write(numAsBytes[j]);
                     numLength++;
+                } else if (j == numAsBytes.length - 1 & numLength == -1) {
+                    out.write(numAsBytes[j]);
+                    numLength++;
                 }
             }
             length = (byte) (length | (byte) (numLength << 2*(3 - i)));
@@ -111,7 +114,7 @@ public class Encoding {
                 o[b] = encoding[bytesRead + b];
             }
             bytesRead += bytesToRead;
-            output[i] = new BigInteger(o).intValue();
+            output[i] = new BigInteger(1, o).intValue();
         }
         return output;
     }
