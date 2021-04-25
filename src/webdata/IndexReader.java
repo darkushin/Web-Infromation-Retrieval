@@ -2,16 +2,27 @@ package webdata;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 
 public class IndexReader {
+	private static String[] indicesNames = {"products_index.txt", "review_index.txt", "token_index.txt"};
+
 	TokensIndex tokenIndex = null;
+	ProductIndex productIndex = null;
+	ReviewIndex reviewIndex = null;
+	String dir;
 
 	/**
 	* Creates an webdata.IndexReader which will read from the given directory
 	*/
 	public IndexReader(String dir) {
+		this.dir = dir;
+		loadIndices(dir);
+	}
+
+	private void loadIndices(String dir){
 		ObjectInputStream in = null;
 		try {
 			FileInputStream fileIn = new FileInputStream(dir + "/tokens_index.txt");
@@ -19,41 +30,70 @@ public class IndexReader {
 			tokenIndex = (TokensIndex) in.readObject();
 			in.close();
 			fileIn.close();
+
+			fileIn = new FileInputStream(dir + "/products_index.txt");
+			in = new ObjectInputStream(fileIn);
+			productIndex = (ProductIndex) in.readObject();
+			in.close();
+			fileIn.close();
+
+			fileIn = new FileInputStream(dir + "/review_index.txt");
+			in = new ObjectInputStream(fileIn);
+			reviewIndex = (ReviewIndex) in.readObject();
+			in.close();
+			fileIn.close();
+
 		} catch (IOException | ClassNotFoundException e) {
+			System.out.println("Error occurred while loading a index file.");
 			e.printStackTrace();
+			System.exit(1);
 		}
-		System.out.println("In index reader!");
 	}
 	
 	/**
 	* Returns the product identifier for the given review
 	* Returns null if there is no review with the given identifier
 	*/
-	public String getProductId(int reviewId) {return "";}
+	public String getProductId(int reviewId) {
+		if (!reviewIndex.isReviewIdValid(reviewId)) { return null;}
+		return productIndex.getWordAt(reviewIndex.getProductNum(reviewId));
+	}
 
 	/**
 	* Returns the score for a given review
 	* Returns -1 if there is no review with the given identifier
 	*/
-	public int getReviewScore(int reviewId) {return 0;}
+	public int getReviewScore(int reviewId) {
+		if (!reviewIndex.isReviewIdValid(reviewId)) { return -1;}
+		return reviewIndex.getScore(reviewId);
+	}
 
 	/**
 	* Returns the numerator for the helpfulness of a given review
 	* Returns -1 if there is no review with the given identifier
 	*/
-	public int getReviewHelpfulnessNumerator(int reviewId) {return 0;}
+	public int getReviewHelpfulnessNumerator(int reviewId) {
+		if (!reviewIndex.isReviewIdValid(reviewId)) { return -1;}
+		return reviewIndex.getHelpfulnessNumerator(reviewId);
+	}
 
 	/**
 	* Returns the denominator for the helpfulness of a given review
 	* Returns -1 if there is no review with the given identifier
 	*/
-	public int getReviewHelpfulnessDenominator(int reviewId) {return 0;}
+	public int getReviewHelpfulnessDenominator(int reviewId) {
+		if (!reviewIndex.isReviewIdValid(reviewId)) { return -1;}
+		return reviewIndex.getHelpfulnessDenominator(reviewId);
+	}
 
 	/**
 	* Returns the number of tokens in a given review
 	* Returns -1 if there is no review with the given identifier
 	*/
-	public int getReviewLength(int reviewId) {return 0;}
+	public int getReviewLength(int reviewId) {
+		if (!reviewIndex.isReviewIdValid(reviewId)) { return -1;}
+		return reviewIndex.getLength(reviewId);
+	}
 
 	/**
 	* Return the number of reviews containing a given token (i.e., word)
@@ -104,11 +144,13 @@ public class IndexReader {
 		int bytesToRead = nextInvertedIdxPtr - tokenInvertedIdxPtr;
 		byte[] dest = new byte[bytesToRead];
 		try {
-			RandomAccessFile file = new RandomAccessFile("data-index/tokens_inverted_index.txt", "r");
+			RandomAccessFile file = new RandomAccessFile(this.dir + "/tokens_inverted_index.txt", "r");
 			file.seek(tokenInvertedIdxPtr);
 			file.read(dest);
-		} catch (IOException e){  // todo: should raise the error in this case
+		} catch (IOException e){
+			System.out.println("Error occurred while accessing the tokens_inverted_index file.");
 			e.printStackTrace();
+			System.exit(1);
 		}
 		ArrayList<Integer> vals = new ArrayList<Integer>(Encoding.deltaDecode(dest).subList(0, numReviews));
 		Encoding.diffToIds(vals);
@@ -119,7 +161,9 @@ public class IndexReader {
 	/**
 	* Return the number of product reviews available in the system
 	*/
-	public int getNumberOfReviews() {return 0;}
+	public int getNumberOfReviews() {
+		return reviewIndex.getNumReview();
+	}
 
 	/**
 	* Return the number of number of tokens in the system
@@ -133,14 +177,27 @@ public class IndexReader {
 	*
 	* Returns an empty Enumeration if there are no reviews for this product
 	*/
-	public Enumeration<Integer> getProductReviews(String productId) {return null;}
-
-	public static void main(String[] args) {
-		String dir = "./data-index";
-
-		IndexReader indexReader = new IndexReader(dir);
-		Enumeration<Integer> e = indexReader.getReviewsWithToken("1");
-		int i = indexReader.getTokenSizeOfReviews();
-		System.out.println(i);
+	public Enumeration<Integer> getProductReviews(String productId) {
+		Enumeration<Integer> enumerator = Collections.emptyEnumeration();
+		int productIdx = productIndex.search(productId);
+		if (productIdx == -1){
+			return enumerator;
+		}
+		int firstReview = productIndex.getReviewId(productIdx);
+		int reviewSpan = productIndex.getReviewSpan(productIdx);
+		ArrayList<Integer> reviews = new ArrayList<>();
+		for (int i = 0; i <= reviewSpan; i++){
+			reviews.add(firstReview + i);
+		}
+		return Collections.enumeration(reviews);
 	}
+
+//	public static void main(String[] args) {
+//		String dir = "./data-index";
+//
+//		IndexReader indexReader = new IndexReader(dir);
+//		Enumeration<Integer> e = indexReader.getReviewsWithToken("1");
+//		int i = indexReader.getTokenSizeOfReviews();
+//		System.out.println(i);
+//	}
 }

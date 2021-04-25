@@ -52,7 +52,7 @@ public class ProductIndex implements Serializable {
         for (List<Integer> entry : inData) {
             ProductInfo pf = new ProductInfo();
             pf.reviewId = entry.get(REVIEWID_INDEX);
-            pf.spanLength = entry.get(SPANLENGTH_INDEX).shortValue(); // TODO: check that casting is correct
+            pf.spanLength = entry.get(SPANLENGTH_INDEX).shortValue();
             if (offset == 0) {
                 pf.stringInfo = entry.get(POINTER_INDEX).shortValue();
             } else {
@@ -82,7 +82,6 @@ public class ProductIndex implements Serializable {
     }
 
     public int search(String str) {
-        boolean found = false;
         int high = data.size() / k;
         int low = 0;
         int cur_block = high / 2;
@@ -110,7 +109,6 @@ public class ProductIndex implements Serializable {
                 return blockStart + offset;
             }
         }
-
         return -1;
     }
 

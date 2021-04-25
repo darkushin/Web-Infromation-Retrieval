@@ -12,13 +12,13 @@ public class SlowIndexWriter {
 	private TreeMap<Integer, ArrayList<String>> reviewIds;
 	private String dir; // TODO Do we support multiple dirs
 
-	private static String[] fileNames = {"products_index.txt", "review_index.txt"};
+	private static String[] fileNames = {"products_index.txt", "review_index.txt", "token_index.txt", "tokens_inverted_index.txt"};
 
 	/**
 	* Given product review data, creates an on disk index
 	* inputFile is the path to the file containing the review data
 	*/
-	public void slowWrite(String inputFile, String dir) throws IOException {
+	public void slowWrite(String inputFile, String dir) {
 		this.dir = dir;
 		createDicts(inputFile);
 		createDir();
@@ -56,25 +56,20 @@ public class SlowIndexWriter {
 		}
 	}
 
-	private void saveFile(String fileName, String data){
-		try {
-			FileWriter file = new FileWriter(this.dir + "/" + fileName + ".txt");
-			file.write(data);
-			file.close();
-		} catch (IOException e) {
-			System.out.println("Error occurred while writing an index file.");
-			e.printStackTrace();
-		}
-	}
-
-	private void createDicts(String inputFile) throws IOException {
+	private void createDicts(String inputFile){
 		productIds = new TreeMap<>();
 		tokenDict = new TreeMap<>();
 		reviewIds = new TreeMap<>();
 
-		DataParser dataParser = new DataParser(inputFile);
+		DataParser dataParser = null;
+		try {
+			dataParser = new DataParser(inputFile);
+		} catch (IOException e) {
+			System.out.println("Error occurred while reading the reviews input file.");
+			System.exit(1);
+		}
 
-		for (int i = 0; i< dataParser.allReviews.size(); i++){
+		for (int i = 0; i < dataParser.allReviews.size(); i++) {
 			addProductId(dataParser.allReviews.get(i).get("productId"), i);
 			int length = addReviewText(dataParser.allReviews.get(i).get("text"), i);
 			addReviewId(dataParser.allReviews.get(i), i, length);
@@ -140,8 +135,7 @@ public class SlowIndexWriter {
 		KFront kf = new KFront();
 		kf.createKFront(k, ids);
 		for (int i = 0; i < vals.size(); i++) {
-			kf.getTable().get(i).addAll(vals.get(i));  // todo: I added a setValue() function to KFront. we should use it here
-//			kf.setValue(i, vals.get(i));
+			kf.getTable().get(i).addAll(vals.get(i));
 		}
 
 		ProductIndex pIndex = new ProductIndex(k);
@@ -160,22 +154,11 @@ public class SlowIndexWriter {
 
 		KFront kf = new KFront(true);
 		kf.createKFront(k, tokens);
-//		saveFile("tokens_concatenated_string", kf.getConcatString());
 
 		TokensIndex tIdx = new TokensIndex(k, this.dir);
 		tIdx.insertData(kf.getTable(), vals, kf.getConcatString());
 
-		// Save the tokens index:
-		FileOutputStream fileOut = null;
-		try {
-			fileOut = new FileOutputStream(this.dir + "/tokens_index.txt");
-			ObjectOutputStream out = new ObjectOutputStream(fileOut);
-			out.writeObject(tIdx);
-			out.close();
-			fileOut.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		saveToDir("review_index.txt", tIdx);
 	}
 
 	private void createReviewIndex() {
@@ -195,25 +178,25 @@ public class SlowIndexWriter {
 		ReviewIndex rIndex = new ReviewIndex();
 		rIndex.insertData(dictValues);
 
-		// TODO Testing, remove this
-		for (int i = 0; i < dictValues.size(); i++) {
-			List<Integer> entry = dictValues.get(i);
-			if (entry.get(0) != rIndex.getProductNum(i)) {
-				System.out.println("!");
-			}
-			if (entry.get(1) != rIndex.getHelpfulnessNumerator(i)) {
-				System.out.println("!!");
-			}
-			if (entry.get(2) != rIndex.getHelpfulnessDenominator(i)) {
-				System.out.println("!!!");
-			}
-			if (entry.get(3) != rIndex.getLength(i)) {
-				System.out.println("!!!!");
-			}
-			if (entry.get(4) != rIndex.getScore(i)) {
-				System.out.println("!!!!!");
-			}
-		}
+//		// TODO Testing, remove this
+//		for (int i = 0; i < dictValues.size(); i++) {
+//			List<Integer> entry = dictValues.get(i);
+//			if (entry.get(0) != rIndex.getProductNum(i)) {
+//				System.out.println("!");
+//			}
+//			if (entry.get(1) != rIndex.getHelpfulnessNumerator(i)) {
+//				System.out.println("!!");
+//			}
+//			if (entry.get(2) != rIndex.getHelpfulnessDenominator(i)) {
+//				System.out.println("!!!");
+//			}
+//			if (entry.get(3) != rIndex.getLength(i)) {
+//				System.out.println("!!!!");
+//			}
+//			if (entry.get(4) != rIndex.getScore(i)) {
+//				System.out.println("!!!!!");
+//			}
+//		}
 
 		saveToDir("review_index.txt", rIndex);
 	}
@@ -227,15 +210,18 @@ public class SlowIndexWriter {
 			out.close();
 			fileOut.close();
 		} catch (IOException e) {
+			System.out.println("Error occurred while saving the index file: " + name);
 			e.printStackTrace();
+			System.exit(1);
 		}
 	}
 
-	public static void main(String[] args) throws IOException {
-		String inputFile = "./1000.txt";
-		String dir = "./data-index";
-
-		SlowIndexWriter slw = new SlowIndexWriter();
-		slw.slowWrite(inputFile, dir);
-	}
+//	public static void main(String[] args) throws IOException {
+//		String inputFile = "./1000.txt";
+//		String dir = "./data-index";
+//
+//		SlowIndexWriter slw = new SlowIndexWriter();
+////		slw.slowWrite(inputFile, dir);
+//		slw.removeIndex(dir);
+//	}
 }

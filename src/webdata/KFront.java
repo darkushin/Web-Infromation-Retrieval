@@ -38,15 +38,6 @@ public class KFront {
         return table;
     }
 
-    /**
-     * Adds the given values to the given entry in the table
-     * @param i the entry of the table to set the values to
-     * @param vals the values that should be added to the table at the i-th entry
-     */
-    public void setValue(int i, List<Integer> vals){
-        table.set(i, vals);
-    }
-
     public void createKFront(int k, List<String> strings) {
         StringBuilder sBuilder = new StringBuilder();
         int offset = 0;

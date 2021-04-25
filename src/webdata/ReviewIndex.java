@@ -50,8 +50,11 @@ public class ReviewIndex {
             data.add(rI);
         }
     }
+    public boolean isReviewIdValid(int reviewId) {
+        return reviewId >= 0 && reviewId <= data.size() - 1;
+    }
 
-    public int[] getEntry(int reviewId) {
+    private int[] getEntry(int reviewId) {
         return Encoding.groupVarintDecode(data.get(reviewId).encodedInfo);
     }
 
@@ -73,5 +76,9 @@ public class ReviewIndex {
 
     public int getLength(int reviewId) {
         return getEntry(reviewId)[REVIEWLENGTH_INDEX];
+    }
+
+    public int getNumReview(){
+        return data.size();
     }
 }

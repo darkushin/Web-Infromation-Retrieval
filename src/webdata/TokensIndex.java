@@ -72,6 +72,7 @@ public class TokensIndex implements Serializable {
         } catch (FileNotFoundException e) {
             System.out.println("Error occurred while creating the tokens_inverted_index file");
             e.printStackTrace();
+            System.exit(1);
         }
     }
 
@@ -97,6 +98,7 @@ public class TokensIndex implements Serializable {
             } catch (IOException e) {
                 System.out.println("Error occurred while accessing the tokens_inverted_index file");
                 e.printStackTrace();
+                System.exit(1);
             }
             saveInvertedIndex(tokenVal);
             if (offset == 0){
@@ -137,7 +139,6 @@ public class TokensIndex implements Serializable {
                 valsList.set(i, valsList.get(i) - valsList.get(i-2));
             }
 
-
             StringBuilder stringCodes = new StringBuilder();
             for (int num : valsList) {
                 String code = Encoding.deltaEncode(num);
@@ -148,6 +149,7 @@ public class TokensIndex implements Serializable {
         } catch (Exception e){
             System.out.println("Error occurred while saving invertedIndex bytes");
             e.printStackTrace();
+            System.exit(1);
         }
     }
 
