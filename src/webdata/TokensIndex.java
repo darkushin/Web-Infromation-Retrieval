@@ -8,15 +8,16 @@ import java.util.Arrays;
 import java.util.List;
 
 public class TokensIndex implements Serializable {
-    private class TokenInfo implements Serializable{
+    public class TokenInfo implements Serializable{
         private short stringInfo; // This is either a pointer to the concatenated string, or a prefix size.
         private short frequency;
         private short collectionFrequency;
         private short length;
         private int invertedIndexPtr;
 
-        public int getFrequency(){ return frequency;}
-        public int collectionFrequency(){ return collectionFrequency;}
+        public short getFrequency(){ return frequency;}
+        public short getCollectionFrequency(){ return collectionFrequency;}
+        public int getInvertedIdxPtr(){ return invertedIndexPtr;}
 
         private void readObject(ObjectInputStream inputFile) throws IOException, ClassNotFoundException {
             stringInfo = inputFile.readShort();
@@ -39,10 +40,11 @@ public class TokensIndex implements Serializable {
     public static int POINTER_INDEX = 0;
     public static int PREFIX_INDEX = 1;
     public static int TOKEN_LENGTH = 2;
-    public static int FREQUENCY_INDEX = 0;
+//    public static int FREQUENCY_INDEX = 0;
 
     private ArrayList<TokenInfo> data;
     private String dictString;
+    private int numTokens;  // the total number of tokens in the collection, including repetitions
     private int k;
     private String dir;
     private RandomAccessFile invertedIndexFile;
@@ -50,9 +52,22 @@ public class TokensIndex implements Serializable {
     public TokensIndex(int k, String dir) {
         this.data = new ArrayList<>();
         this.dictString = null;
+        this.numTokens = 0;
         this.k = k;
         this.dir = dir;
+        createRandomAccessFile();
+    }
+
+    /**
+     * Create a new RandomAccessFile to write the tokens inverted index into.
+     * If such a file already exists, first remove it.
+     */
+    private void createRandomAccessFile(){
         try {
+            File file = new File(this.dir + "/tokens_inverted_index.txt");
+            if (file.exists()){
+                file.delete();
+            }
             this.invertedIndexFile = new RandomAccessFile(this.dir + "/tokens_inverted_index.txt", "rw");
         } catch (FileNotFoundException e) {
             System.out.println("Error occurred while creating the tokens_inverted_index file");
@@ -60,6 +75,12 @@ public class TokensIndex implements Serializable {
         }
     }
 
+    /**
+     * Insert the given information of token properties into the index format that should be saved.
+     * @param tokensData the data of the token containing its pointer/prefix length and token length as created in the KFront class.
+     * @param tokensVals a list of reviewId-num appearances of reviews containing every token and the number the token appeared in every review.
+     * @param concatString the concatenated string of all tokens in the collection, created by the KFront class.
+     */
     public void insertData(List<List<Integer>> tokensData, ArrayList<ArrayList<Integer>> tokensVals, String concatString){
         dictString = concatString;
         int offset = 0;
@@ -68,15 +89,16 @@ public class TokensIndex implements Serializable {
             List<Integer> tokenVal = tokensVals.get(i);
             TokenInfo token = new TokenInfo();
             token.length = tokenData.get(TOKEN_LENGTH).shortValue();
-            token.frequency = (short) (tokenVal.size() - 1);
-            token.collectionFrequency = tokenVal.get(FREQUENCY_INDEX).shortValue();
+            token.frequency = (short) (tokenVal.size() / 2);
+            token.collectionFrequency = (short) subListVals(tokenVal, "even").stream().mapToInt(Integer::intValue).sum();
+            numTokens += token.getCollectionFrequency();
             try {
                 token.invertedIndexPtr = (int) this.invertedIndexFile.getFilePointer();
             } catch (IOException e) {
                 System.out.println("Error occurred while accessing the tokens_inverted_index file");
                 e.printStackTrace();
             }
-            saveInvertedIndex(tokenVal.subList(1, tokenVal.size()));
+            saveInvertedIndex(tokenVal);
             if (offset == 0){
                 token.stringInfo = tokenData.get(POINTER_INDEX).shortValue();
             } else {
@@ -89,18 +111,35 @@ public class TokensIndex implements Serializable {
     }
 
     /**
-     * Encodes the integers given in the integer list using delta encoding, and saves them in the invertedIndexFile.
-     * @param idsList a list with number that should be encoded and saved in the inverted index file.
+     * Create a sub list of the given list containing only the odd/even elements in the array
+     * @param inputList the list that should be sliced
+     * @param type can be `odd` or `even`
+     * @return a List of integers containing only the elements in odd/even indices of the input array 
      */
-    private void saveInvertedIndex(List<Integer> idsList) {
+    private List<Integer> subListVals(List<Integer> inputList, String type){
+        int first = 0;
+        List<Integer> subList = new ArrayList<>();
+        if (type.equals("even")){ first = 1; }
+        for (int i = first; i < inputList.size(); i = i + 2){
+            subList.add(inputList.get(i));
+        }
+        return subList;
+    }
+
+    /**
+     * Encodes the integers given in the integer list using delta encoding, and saves them in the invertedIndexFile.
+     * @param valsList a list with number that should be encoded and saved in the inverted index file.
+     */
+    private void saveInvertedIndex(List<Integer> valsList) {
         try {
-            // change the idsList to a difference list (except for the first id):
-            for (int i = idsList.size()-1; i>0; i--){
-                idsList.set(i, idsList.get(i) - idsList.get(i-1));
+            // change the reviewIds (odd indices) to a difference list (except for the first id):
+            for (int i = valsList.size()-2; i>0; i = i - 2){
+                valsList.set(i, valsList.get(i) - valsList.get(i-2));
             }
 
+
             StringBuilder stringCodes = new StringBuilder();
-            for (int num : idsList) {
+            for (int num : valsList) {
                 String code = Encoding.deltaEncode(num);
                 stringCodes.append(code);
             }
@@ -112,8 +151,24 @@ public class TokensIndex implements Serializable {
         }
     }
 
+    /**
+     * @return get the entire data of all tokens.
+     */
     public ArrayList<TokenInfo> get(){
         return data;
+    }
+
+    /**
+     * get the data of a specific token.
+     * @param tokenIndex the index of the token that should be retrieved.
+     * @return the information of the token that was queried.
+     */
+    public TokenInfo get(int tokenIndex){
+        return data.get(tokenIndex);
+    }
+
+    public int getNumTokens(){
+        return numTokens;
     }
 
     public String getWordAt(int index) {
@@ -171,6 +226,7 @@ public class TokensIndex implements Serializable {
     private void readObject(ObjectInputStream inputFile) throws IOException, ClassNotFoundException {
         k = inputFile.readInt();
         dictString = inputFile.readUTF();
+        numTokens = inputFile.readInt();
         data = (ArrayList<TokenInfo>) inputFile.readObject();
 
     }
@@ -179,6 +235,7 @@ public class TokensIndex implements Serializable {
     private void writeObject(ObjectOutputStream outputFile) throws IOException {
         outputFile.writeInt(this.k);
         outputFile.writeUTF(this.dictString);
+        outputFile.writeInt(this.numTokens);
         outputFile.writeObject(this.data);
     }
 }

@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.List;
 
 // TODO: Handle encoding of 0
 public class Encoding {
@@ -18,8 +19,6 @@ public class Encoding {
         String offset = Integer.toBinaryString(num);
         return gammaEncode(offset.length()) + offset.substring(1);
     }
-
-
 
     public static ArrayList<Integer> gammaDecode(String encoding) {
         ArrayList<Integer> output = new ArrayList<>();
@@ -79,6 +78,17 @@ public class Encoding {
 
     public static BitSet toBitSet(String encoding) {
         return BitSet.valueOf(toByteArray(encoding));
+    }
+
+    /**
+     * Convert the given list of id-1, num-appearances-1, id-2, num-appearances-2... where the ids are given by their
+     * differences to a list where every id entry are the full id number.
+     */
+    public static List<Integer> diffToIds(List<Integer> vals){
+        for (int i = 2; i < vals.size() - 1; i = i + 2){
+            vals.set(i, vals.get(i) + vals.get(i - 2));
+        }
+        return vals;
     }
 
     /*

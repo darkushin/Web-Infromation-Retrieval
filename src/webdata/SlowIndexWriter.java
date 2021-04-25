@@ -7,10 +7,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class SlowIndexWriter {
-	// tokenDict is a dictionary used for creating the tokens index. The keys are the different tokens in the collection
-	// and the values of each token is a list of integers, where the first element is the collection frequency of the word,
-	// and the rest of the elements are the ids of the files containing this word.
-	private TreeMap<String, ArrayList<Integer>> tokenDict;
+	private TreeMap<String, ArrayList<Integer>> tokenDict;  // keys are tokens, values are a list where odd cells are review ids including this token and even cells are the times the token appeared in the review.
 	private TreeMap<String, ArrayList<Integer>> productIds;
 	private HashMap<Integer, ArrayList<String>> reviewIds;
 	private String dir;
@@ -91,15 +88,16 @@ public class SlowIndexWriter {
 			token = token.toLowerCase();
 			if (tokenDict.containsKey(token)){  // token already exists, update its entry
 				List<Integer> tokenInfo = tokenDict.get(token);
-				tokenInfo.set(0, tokenInfo.get(0) + 1);
-
-				// check if the current review was already added to the token's review list, if not add it
-				if (tokenInfo.get(tokenInfo.size()-1) != reviewIndex){
+				// check if the current review was already added to the token's review list. If yes, increase the # appearances of the token, else add it with # appearance = 1.
+				if (tokenInfo.get(tokenInfo.size()-2) == reviewIndex){
+					tokenInfo.set(tokenInfo.size()-1 ,tokenInfo.get(tokenInfo.size()-1) + 1);
+				} else {  // token appears first time in the given review
 					tokenInfo.add(reviewIndex);
+					tokenInfo.add(1);
 				}
 			}
 			else{  // token seen for the first time, add a new entry for it
-				tokenDict.put(token, new ArrayList<>(Arrays.asList(1, reviewIndex)));
+				tokenDict.put(token, new ArrayList<>(Arrays.asList(reviewIndex, 1)));
 			}
 		}
 		return reviewLength;
@@ -174,7 +172,7 @@ public class SlowIndexWriter {
 
 		KFront kf = new KFront(true);
 		kf.createKFront(k, tokens);
-		saveFile("tokens_concatenated_string", kf.getConcatString());
+//		saveFile("tokens_concatenated_string", kf.getConcatString());
 
 		TokensIndex tIdx = new TokensIndex(k, this.dir);
 		tIdx.insertData(kf.getTable(), vals, kf.getConcatString());

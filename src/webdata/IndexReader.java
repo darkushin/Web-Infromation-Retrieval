@@ -1,6 +1,8 @@
 package webdata;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 
 public class IndexReader {
@@ -62,9 +64,8 @@ public class IndexReader {
 		int currentTokenIdx = tokenIndex.search(token);
 		if (currentTokenIdx == -1){
 			return 0;
-		} else {
-			return 0; //tokenIndex.get().get(currentTokenIdx).getFrequency();
 		}
+		return tokenIndex.get(currentTokenIdx).getFrequency();
 	}
 
 	/**
@@ -72,7 +73,14 @@ public class IndexReader {
 	* the reviews indexed
 	* Returns 0 if there are no reviews containing this token
 	*/
-	public int getTokenCollectionFrequency(String token) {return 0;}
+	public int getTokenCollectionFrequency(String token) {
+		token = token.toLowerCase();
+		int currentTokenIdx = tokenIndex.search(token);
+		if (currentTokenIdx == -1) {
+			return 0;
+		}
+		return tokenIndex.get(currentTokenIdx).getCollectionFrequency();
+	}
 
 	/**
 	* Return a series of integers of the form id-1, freq-1, id-2, freq-2, ... such
@@ -83,7 +91,30 @@ public class IndexReader {
 	*
 	* Returns an empty Enumeration if there are no reviews containing this token
 	*/
-	public Enumeration<Integer> getReviewsWithToken(String token) {return null;}
+	public Enumeration<Integer> getReviewsWithToken(String token) {
+		Enumeration<Integer> enumerator = Collections.emptyEnumeration();
+		token = token.toLowerCase();
+		int currentTokenIdx = tokenIndex.search(token);
+		if (currentTokenIdx == -1){
+			return enumerator;
+		}
+		int tokenInvertedIdxPtr = tokenIndex.get(currentTokenIdx).getInvertedIdxPtr();
+		int nextInvertedIdxPtr = tokenIndex.get(currentTokenIdx + 1).getInvertedIdxPtr();
+		int numReviews = tokenIndex.get(currentTokenIdx).getFrequency() * 2;
+		int bytesToRead = nextInvertedIdxPtr - tokenInvertedIdxPtr;
+		byte[] dest = new byte[bytesToRead];
+		try {
+			RandomAccessFile file = new RandomAccessFile("data-index/tokens_inverted_index.txt", "r");
+			file.seek(tokenInvertedIdxPtr);
+			file.read(dest);
+		} catch (IOException e){  // todo: should raise the error in this case
+			e.printStackTrace();
+		}
+		ArrayList<Integer> vals = new ArrayList<Integer>(Encoding.deltaDecode(dest).subList(0, numReviews));
+		Encoding.diffToIds(vals);
+
+		return Collections.enumeration(vals);
+	}
 
 	/**
 	* Return the number of product reviews available in the system
@@ -94,7 +125,7 @@ public class IndexReader {
 	* Return the number of number of tokens in the system
 	* (Tokens should be counted as many times as they appear)
 	*/
-	public int getTokenSizeOfReviews() {return 0;}
+	public int getTokenSizeOfReviews() {return tokenIndex.getNumTokens();}
 	
 	/**
 	* Return the ids of the reviews for a given product identifier
@@ -108,7 +139,8 @@ public class IndexReader {
 		String dir = "./data-index";
 
 		IndexReader indexReader = new IndexReader(dir);
-		int i = indexReader.getTokenFrequency("10");
+		Enumeration<Integer> e = indexReader.getReviewsWithToken("1");
+		int i = indexReader.getTokenSizeOfReviews();
 		System.out.println(i);
 	}
 }
