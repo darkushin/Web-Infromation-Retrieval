@@ -9,12 +9,12 @@ import java.util.*;
 public class SlowIndexWriter {
 	private TreeMap<String, ArrayList<Integer>> tokenDict;  // keys are tokens, values are a list where odd cells are review ids including this token and even cells are the times the token appeared in the review.
 	private TreeMap<String, ArrayList<Integer>> productIds;
-	private HashMap<Integer, ArrayList<String>> reviewIds;
-	private String dir;
+	private TreeMap<Integer, ArrayList<String>> reviewIds;
+	private String dir; // TODO Do we support multiple dirs
 
-	public SlowIndexWriter(String inputFile, String dir) throws IOException {
-		this.dir = dir;
-		slowWrite(inputFile);
+	public SlowIndexWriter() {
+//		this.dir = dir;
+//		slowWrite(inputFile);
 	}
 
 
@@ -22,11 +22,13 @@ public class SlowIndexWriter {
 	* Given product review data, creates an on disk index
 	* inputFile is the path to the file containing the review data
 	*/
-	public void slowWrite(String inputFile) throws IOException {
+	public void slowWrite(String inputFile, String dir) throws IOException {
+		this.dir = dir;
 		createDicts(inputFile);
 		createDir();
 		createProductIndex();
 		createTokenIndex();
+		createReviewIndex();
 	}
 
 	/**
@@ -60,7 +62,7 @@ public class SlowIndexWriter {
 	private void createDicts(String inputFile) throws IOException {
 		productIds = new TreeMap<>();
 		tokenDict = new TreeMap<>();
-		reviewIds = new HashMap<>();
+		reviewIds = new TreeMap<>();
 
 		DataParser dataParser = new DataParser(inputFile);
 
@@ -131,34 +133,12 @@ public class SlowIndexWriter {
 		kf.createKFront(k, ids);
 		for (int i = 0; i < vals.size(); i++) {
 			kf.getTable().get(i).addAll(vals.get(i));  // todo: I added a setValue() function to KFront. we should use it here
+//			kf.setValue(i, vals.get(i));
 		}
 
 		ProductIndex pIndex = new ProductIndex(k);
 		pIndex.insertData(kf.getTable(), kf.getConcatString());
-
-		// Test that all words can be successfully retrieved & searched for
-		for (int i = 0; i < kf.getTable().size(); i++) {
-			String srch = pIndex.getWordAt(i);
-			if (!srch.equals(ids.get(i))) {
-				System.out.println("Failed to get word " + ids.get(i) + " (" + i + ")");
-			}
-			int idx = pIndex.search(srch);
-			if (i != idx) {
-				System.out.println("Failed to search for " + ids.get(i) + " (" + i + ")");
-			}
-		}
-		// Search for things that shouldn't be in the dictionary
-		if (pIndex.search("AAAAAAAA") != -1) {
-			System.out.println("Oh no!");
-		}
-		if (pIndex.search("ZZZZZZZZ") != -1) {
-			System.out.println("Oh no!");
-		}
-		if (pIndex.search("B0000044") != -1) {
-			System.out.println("Oh no!");
-		}
-
-		System.out.println("yo");
+		saveToDir("products_index.txt", pIndex);
 	}
 
 	/**
@@ -190,11 +170,28 @@ public class SlowIndexWriter {
 		}
 	}
 
+	private void createReviewIndex() {
+		System.out.println("yo");
+	}
+
+	private void saveToDir(String name, Object obj) {
+		FileOutputStream fileOut = null;
+		try {
+			fileOut = new FileOutputStream(this.dir + "/" + name);
+			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+			out.writeObject(obj);
+			out.close();
+			fileOut.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	public static void main(String[] args) throws IOException {
 		String inputFile = "./100.txt";
 		String dir = "./data-index";
 
-		SlowIndexWriter slw = new SlowIndexWriter(inputFile, dir);
-
+		SlowIndexWriter slw = new SlowIndexWriter();
+		slw.slowWrite(inputFile, dir);
 	}
 }
