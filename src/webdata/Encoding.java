@@ -1,6 +1,7 @@
 package webdata;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -75,6 +76,18 @@ public class Encoding {
 
     public static BitSet toBitSet(String encoding) {
         return BitSet.valueOf(toByteArray(encoding));
+    }
+
+    public static byte[] groupVarintEncode(int[] nums) {
+        ByteBuffer bb = ByteBuffer.allocate(20);
+        for (int i = 0; i < nums.length; i++) {
+            bb.putInt(nums[i]);
+        }
+        return null;
+    }
+
+    public static int[] groupVarintDecode(byte[] encoding) {
+        return null;
     }
 
     /*

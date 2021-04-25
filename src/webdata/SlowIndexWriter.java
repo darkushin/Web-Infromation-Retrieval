@@ -12,12 +12,12 @@ public class SlowIndexWriter {
 	// and the rest of the elements are the ids of the files containing this word.
 	private TreeMap<String, ArrayList<Integer>> tokenDict;
 	private TreeMap<String, ArrayList<Integer>> productIds;
-	private HashMap<Integer, ArrayList<String>> reviewIds;
-	private String dir;
+	private TreeMap<Integer, ArrayList<String>> reviewIds;
+	private String dir; // TODO Do we support multiple dirs
 
-	public SlowIndexWriter(String inputFile, String dir) throws IOException {
-		this.dir = dir;
-		slowWrite(inputFile);
+	public SlowIndexWriter() {
+//		this.dir = dir;
+//		slowWrite(inputFile);
 	}
 
 
@@ -25,11 +25,13 @@ public class SlowIndexWriter {
 	* Given product review data, creates an on disk index
 	* inputFile is the path to the file containing the review data
 	*/
-	public void slowWrite(String inputFile) throws IOException {
+	public void slowWrite(String inputFile, String dir) throws IOException {
+		this.dir = dir;
 		createDicts(inputFile);
 		createDir();
 		createProductIndex();
 		createTokenIndex();
+		createReviewIndex();
 	}
 
 	/**
@@ -63,7 +65,7 @@ public class SlowIndexWriter {
 	private void createDicts(String inputFile) throws IOException {
 		productIds = new TreeMap<>();
 		tokenDict = new TreeMap<>();
-		reviewIds = new HashMap<>();
+		reviewIds = new TreeMap<>();
 
 		DataParser dataParser = new DataParser(inputFile);
 
@@ -170,6 +172,10 @@ public class SlowIndexWriter {
 		}
 	}
 
+	private void createReviewIndex() {
+		System.out.println("yo");
+	}
+
 	private void saveToDir(String name, Object obj) {
 		FileOutputStream fileOut = null;
 		try {
@@ -187,7 +193,7 @@ public class SlowIndexWriter {
 		String inputFile = "./100.txt";
 		String dir = "./data-index";
 
-		SlowIndexWriter slw = new SlowIndexWriter(inputFile, dir);
-
+		SlowIndexWriter slw = new SlowIndexWriter();
+		slw.slowWrite(inputFile, dir);
 	}
 }
