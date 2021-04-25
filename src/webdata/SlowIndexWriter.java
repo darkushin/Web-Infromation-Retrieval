@@ -12,11 +12,7 @@ public class SlowIndexWriter {
 	private TreeMap<Integer, ArrayList<String>> reviewIds;
 	private String dir; // TODO Do we support multiple dirs
 
-	public SlowIndexWriter() {
-//		this.dir = dir;
-//		slowWrite(inputFile);
-	}
-
+	private static String[] fileNames = {"products_index.txt", "review_index.txt"};
 
 	/**
 	* Given product review data, creates an on disk index
@@ -34,7 +30,19 @@ public class SlowIndexWriter {
 	/**
 	 * Delete all index files by removing the given directory
 	 */
-	public void removeIndex(String dir) {}
+	public void removeIndex(String dir) {
+		for (String filename : fileNames) {
+			try {
+				File f = new File(dir + "/" + filename);
+				Files.deleteIfExists(f.toPath());
+			} catch (IOException e) {
+				System.out.println("Error occurred while deleting " + filename);
+				e.printStackTrace();
+			}
+		}
+		File f = new File(dir);
+		f.delete();
+	}
 
 	/**
 	 * Create a new directory in the path specified in the instance initialization.
