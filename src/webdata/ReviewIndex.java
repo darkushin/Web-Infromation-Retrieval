@@ -26,6 +26,7 @@ public class ReviewIndex implements Serializable{
     public static int HELPFNUM_INDEX = 1;
     public static int HELPFDNOM_INDEX = 2;
     public static int REVIEWLENGTH_INDEX = 3;
+    public static int SCORE_INDEX = 4;
 
     private ArrayList<ReviewInfo> data;
 
