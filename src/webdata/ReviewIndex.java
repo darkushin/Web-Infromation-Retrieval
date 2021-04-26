@@ -26,7 +26,6 @@ public class ReviewIndex implements Serializable{
     public static int HELPFNUM_INDEX = 1;
     public static int HELPFDNOM_INDEX = 2;
     public static int REVIEWLENGTH_INDEX = 3;
-    public static int SCORE_INDEX = 4;
 
     private ArrayList<ReviewInfo> data;
 
@@ -51,8 +50,6 @@ public class ReviewIndex implements Serializable{
 
     /**
      * Check if the given review id is valid, i.e. larger than 0 and smaller than #reviews.
-     * @param reviewId
-     * @return
      */
     public boolean isReviewIdValid(int reviewId) {
         return reviewId >= 0 && reviewId <= (data.size() - 1);

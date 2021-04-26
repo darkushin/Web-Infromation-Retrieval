@@ -203,13 +203,4 @@ public class IndexReader {
 		}
 		return Collections.enumeration(reviews);
 	}
-
-//	public static void main(String[] args) {
-//		String dir = "./data-index";
-//
-//		IndexReader indexReader = new IndexReader(dir);
-//		Enumeration<Integer> e = indexReader.getReviewsWithToken("1");
-//		int i = indexReader.getTokenSizeOfReviews();
-//		System.out.println(i);
-//	}
 }

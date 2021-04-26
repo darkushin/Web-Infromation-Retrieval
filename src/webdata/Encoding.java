@@ -5,7 +5,6 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.List;
 
 public class Encoding {
@@ -158,31 +157,5 @@ public class Encoding {
         }
         return vals;
     }
-
-    /*
-    # TODO: for testing, remove later.
-     */
-//    public static void main(String args[]) {
-//        // Gamma test
-//        String encoding = gammaEncode(56) + gammaEncode(13) + gammaEncode(1) +
-//                gammaEncode(2) + gammaEncode(1);
-//        byte[] bytearr = toByteArray(encoding);
-//        String fromarr = byteToString(bytearr);
-//        ArrayList<Integer> nums = gammaDecode(bytearr);
-//        System.out.println(nums);
-//
-//        // Delta test
-//        encoding = deltaEncode(57) + deltaEncode(375);
-//        bytearr = toByteArray(encoding);
-//        fromarr = byteToString(bytearr);
-//        nums = deltaDecode(bytearr);
-//        System.out.println(nums);
-//
-//        // Group Varint test
-//        int[] numgroup = {900000, 20, 450, 9};
-//        byte[] bytegroup = groupVarintEncode(numgroup);
-//        int[] decoded = groupVarintDecode(bytegroup);
-//        System.out.println("Done.");
-//    }
 }
 

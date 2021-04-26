@@ -1,7 +1,6 @@
 package webdata;
 
 import java.io.*;
-import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -217,13 +216,4 @@ public class SlowIndexWriter {
 			System.exit(1);
 		}
 	}
-
-//	public static void main(String[] args) throws IOException {
-//		String inputFile = "./1000.txt";
-//		String dir = "./MoodleTest";
-//
-//		SlowIndexWriter slw = new SlowIndexWriter();
-//		slw.slowWrite(inputFile, dir);
-//		slw.removeIndex(dir);
-//	}
 }
