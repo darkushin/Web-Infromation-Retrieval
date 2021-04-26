@@ -1,25 +1,20 @@
 package webdata;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serial;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ReviewIndex {
-    private class ReviewInfo {
+public class ReviewIndex implements Serializable{
+    private class ReviewInfo implements Serializable {
         private byte[] encodedInfo;
         private byte score;
 
-        @Serial
         private void readObject(ObjectInputStream inputFile) throws ClassNotFoundException, IOException
         {
             encodedInfo = (byte[]) inputFile.readObject();
             score = inputFile.readByte();
         }
 
-        @Serial
         private void writeObject(ObjectOutputStream outputFile) throws IOException
         {
             outputFile.writeObject(encodedInfo);
@@ -35,6 +30,9 @@ public class ReviewIndex {
 
     private ArrayList<ReviewInfo> data;
 
+    /**
+     * insert the given data into the list containing all the information of reviews.
+     */
     public void insertData(List<List<Integer>> inData) {
         data = new ArrayList<>();
         for (List<Integer> entry : inData) {
@@ -50,8 +48,14 @@ public class ReviewIndex {
             data.add(rI);
         }
     }
+
+    /**
+     * Check if the given review id is valid, i.e. larger than 0 and smaller than #reviews.
+     * @param reviewId
+     * @return
+     */
     public boolean isReviewIdValid(int reviewId) {
-        return reviewId >= 0 && reviewId <= data.size() - 1;
+        return reviewId >= 0 && reviewId <= (data.size() - 1);
     }
 
     private int[] getEntry(int reviewId) {
@@ -80,5 +84,15 @@ public class ReviewIndex {
 
     public int getNumReview(){
         return data.size();
+    }
+
+    private void readObject(ObjectInputStream inputFile) throws ClassNotFoundException, IOException
+    {
+        data = (ArrayList<ReviewInfo>) inputFile.readObject();
+    }
+
+    private void writeObject(ObjectOutputStream outputFile) throws IOException
+    {
+        outputFile.writeObject(this.data);
     }
 }

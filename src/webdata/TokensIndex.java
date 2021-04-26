@@ -40,7 +40,8 @@ public class TokensIndex implements Serializable {
     public static int POINTER_INDEX = 0;
     public static int PREFIX_INDEX = 1;
     public static int TOKEN_LENGTH = 2;
-//    public static int FREQUENCY_INDEX = 0;
+    private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
+
 
     private ArrayList<TokenInfo> data;
     private String dictString;
@@ -64,11 +65,11 @@ public class TokensIndex implements Serializable {
      */
     private void createRandomAccessFile(){
         try {
-            File file = new File(this.dir + "/tokens_inverted_index.txt");
+            File file = new File(this.dir + "/" + TOKEN_INVERTED_INDEX_FILE);
             if (file.exists()){
                 file.delete();
             }
-            this.invertedIndexFile = new RandomAccessFile(this.dir + "/tokens_inverted_index.txt", "rw");
+            this.invertedIndexFile = new RandomAccessFile(this.dir + "/" + TOKEN_INVERTED_INDEX_FILE, "rw");
         } catch (FileNotFoundException e) {
             System.out.println("Error occurred while creating the tokens_inverted_index file");
             e.printStackTrace();
@@ -96,7 +97,7 @@ public class TokensIndex implements Serializable {
             try {
                 token.invertedIndexPtr = (int) this.invertedIndexFile.getFilePointer();
             } catch (IOException e) {
-                System.out.println("Error occurred while accessing the tokens_inverted_index file");
+                System.out.println("Error occurred while accessing the token_inverted_index file");
                 e.printStackTrace();
                 System.exit(1);
             }
@@ -173,6 +174,9 @@ public class TokensIndex implements Serializable {
         return numTokens;
     }
 
+    /**
+     * Retrieve the string word of the product at the given index.
+     */
     public String getWordAt(int index) {
         int blockStart = index - (index % k);
         int startStringPtr = data.get(blockStart).stringInfo;
@@ -192,6 +196,9 @@ public class TokensIndex implements Serializable {
         return str.toString();
     }
 
+    /**
+     * Search the given string in the tokenIndex dictionary, using binary search.
+     */
     public int search(String str) {
         int high = data.size() / k;
         int low = 0;
@@ -223,8 +230,6 @@ public class TokensIndex implements Serializable {
         return -1;
     }
 
-
-    @Serial
     private void readObject(ObjectInputStream inputFile) throws IOException, ClassNotFoundException {
         k = inputFile.readInt();
         dictString = inputFile.readUTF();
@@ -233,7 +238,6 @@ public class TokensIndex implements Serializable {
 
     }
 
-    @Serial
     private void writeObject(ObjectOutputStream outputFile) throws IOException {
         outputFile.writeInt(this.k);
         outputFile.writeUTF(this.dictString);

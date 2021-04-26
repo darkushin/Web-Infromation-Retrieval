@@ -12,7 +12,6 @@ public class ProductIndex implements Serializable {
         private int reviewId;
         private short spanLength;
 
-        @Serial
         private void readObject(ObjectInputStream inputFile) throws ClassNotFoundException, IOException
         {
             stringInfo = inputFile.readShort();
@@ -20,7 +19,6 @@ public class ProductIndex implements Serializable {
             spanLength = inputFile.readShort();
         }
 
-        @Serial
         private void writeObject(ObjectOutputStream outputFile) throws IOException
         {
             outputFile.writeShort(stringInfo);
@@ -46,6 +44,9 @@ public class ProductIndex implements Serializable {
         this.k = k;
     }
 
+    /**
+     * Insert the given data into the list of products and the given concatenated string.
+     */
     public void insertData(List<List<Integer>> inData, String concatString) {
         dictString = concatString;
         int offset = 0;
@@ -64,6 +65,9 @@ public class ProductIndex implements Serializable {
         }
     }
 
+    /**
+     * Retrieve the string word of the product at the given index.
+     */
     public String getWordAt(int index) {
         int blockStart = index - (index % k);
         int startStringPtr = data.get(blockStart).stringInfo;
@@ -81,6 +85,9 @@ public class ProductIndex implements Serializable {
         return str.toString();
     }
 
+    /**
+     * Search the given string in the productIndex dictionary, using binary search.
+     */
     public int search(String str) {
         int high = data.size() / k;
         int low = 0;
@@ -112,7 +119,6 @@ public class ProductIndex implements Serializable {
         return -1;
     }
 
-    @Serial
     private void readObject(ObjectInputStream inputFile) throws ClassNotFoundException, IOException
     {
         k = inputFile.readInt();
@@ -120,7 +126,6 @@ public class ProductIndex implements Serializable {
         data = (ArrayList<ProductInfo>) inputFile.readObject();
     }
 
-    @Serial
     private void writeObject(ObjectOutputStream outputFile) throws IOException
     {
         outputFile.writeInt(k);

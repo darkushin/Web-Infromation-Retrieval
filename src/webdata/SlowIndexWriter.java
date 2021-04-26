@@ -10,9 +10,13 @@ public class SlowIndexWriter {
 	private TreeMap<String, ArrayList<Integer>> tokenDict;  // keys are tokens, values are a list where odd cells are review ids including this token and even cells are the times the token appeared in the review.
 	private TreeMap<String, ArrayList<Integer>> productIds;
 	private TreeMap<Integer, ArrayList<String>> reviewIds;
-	private String dir; // TODO Do we support multiple dirs
+	private String dir;
 
-	private static String[] fileNames = {"products_index.txt", "review_index.txt", "token_index.txt", "tokens_inverted_index.txt"};
+	private static final String PRODUCT_INDEX_FILE = "product_index.txt";
+	private static final String REVIEW_INDEX_FILE = "review_index.txt";
+	private static final String TOKEN_INDEX_FILE = "token_index.txt";
+	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
+
 
 	/**
 	* Given product review data, creates an on disk index
@@ -31,17 +35,14 @@ public class SlowIndexWriter {
 	 * Delete all index files by removing the given directory
 	 */
 	public void removeIndex(String dir) {
-		for (String filename : fileNames) {
-			try {
-				File f = new File(dir + "/" + filename);
-				Files.deleteIfExists(f.toPath());
-			} catch (IOException e) {
-				System.out.println("Error occurred while deleting " + filename);
-				e.printStackTrace();
+		File dirToRemove = new File(dir);
+		File[] contents = dirToRemove.listFiles();
+		if (contents != null) {
+			for (File file : contents) {
+				file.delete();
 			}
 		}
-		File f = new File(dir);
-		f.delete();
+		dirToRemove.delete();
 	}
 
 	/**
@@ -56,6 +57,10 @@ public class SlowIndexWriter {
 		}
 	}
 
+	/**
+	 * Create temporary dictionaries that will store all information, before saving the indices to the disk.
+	 * @param inputFile
+	 */
 	private void createDicts(String inputFile){
 		productIds = new TreeMap<>();
 		tokenDict = new TreeMap<>();
@@ -70,8 +75,8 @@ public class SlowIndexWriter {
 		}
 
 		for (int i = 0; i < dataParser.allReviews.size(); i++) {
-			addProductId(dataParser.allReviews.get(i).get("productId"), i);
-			int length = addReviewText(dataParser.allReviews.get(i).get("text"), i);
+			addProductId(dataParser.allReviews.get(i).get("productId"), i + 1);
+			int length = addReviewText(dataParser.allReviews.get(i).get("text"), i + 1);
 			addReviewId(dataParser.allReviews.get(i), i, length);
 		}
 	}
@@ -108,6 +113,10 @@ public class SlowIndexWriter {
 		return reviewLength;
 	}
 
+	/**
+	 * Update the productId dictionary by adding to it the given product. If the product already exists, it adds review
+	 * id to the reviews that are matching to this product.
+	 */
 	private void addProductId(String productId, int reviewId) {
 		if (!productIds.containsKey(productId)) {
 			productIds.put(productId, new ArrayList<>(Arrays.asList(reviewId, 0)));
@@ -118,6 +127,9 @@ public class SlowIndexWriter {
 		}
 	}
 
+	/**
+	 * Adds all the information that is relevant to the given reviewId to the reviewIds dictionary.
+	 */
 	private void addReviewId(HashMap<String, String> review, int reviewId, int length) {
 		reviewIds.put(reviewId, new ArrayList<>());
 		// 0 - productId, 1 - score, 2 - helpfulness, 3 - length
@@ -128,10 +140,13 @@ public class SlowIndexWriter {
 		reviewIds.get(reviewId).add(String.valueOf(length));
 	}
 
+	/**
+	 * Creates and saves to the disk the product index, i.e. all the information that is related to products.
+	 */
 	private void createProductIndex() {
 		LinkedList<String> ids = new LinkedList<>(productIds.keySet());
 		ArrayList<ArrayList<Integer>> vals = new ArrayList<>(productIds.values());
-		int k = 4;
+		int k = 8;
 		KFront kf = new KFront();
 		kf.createKFront(k, ids);
 		for (int i = 0; i < vals.size(); i++) {
@@ -140,7 +155,7 @@ public class SlowIndexWriter {
 
 		ProductIndex pIndex = new ProductIndex(k);
 		pIndex.insertData(kf.getTable(), kf.getConcatString());
-		saveToDir("products_index.txt", pIndex);
+		saveToDir(PRODUCT_INDEX_FILE, pIndex);
 	}
 
 	/**
@@ -158,9 +173,12 @@ public class SlowIndexWriter {
 		TokensIndex tIdx = new TokensIndex(k, this.dir);
 		tIdx.insertData(kf.getTable(), vals, kf.getConcatString());
 
-		saveToDir("review_index.txt", tIdx);
+		saveToDir(TOKEN_INDEX_FILE, tIdx);
 	}
 
+	/**
+	 * Creates and saves to the disk the review index which hold all information related to reviews.
+	 */
 	private void createReviewIndex() {
 		// Revise the review dictionary to the correct structure & change productIDs to product index
 		LinkedList<List<Integer>> dictValues = new LinkedList<>();
@@ -178,29 +196,13 @@ public class SlowIndexWriter {
 		ReviewIndex rIndex = new ReviewIndex();
 		rIndex.insertData(dictValues);
 
-//		// TODO Testing, remove this
-//		for (int i = 0; i < dictValues.size(); i++) {
-//			List<Integer> entry = dictValues.get(i);
-//			if (entry.get(0) != rIndex.getProductNum(i)) {
-//				System.out.println("!");
-//			}
-//			if (entry.get(1) != rIndex.getHelpfulnessNumerator(i)) {
-//				System.out.println("!!");
-//			}
-//			if (entry.get(2) != rIndex.getHelpfulnessDenominator(i)) {
-//				System.out.println("!!!");
-//			}
-//			if (entry.get(3) != rIndex.getLength(i)) {
-//				System.out.println("!!!!");
-//			}
-//			if (entry.get(4) != rIndex.getScore(i)) {
-//				System.out.println("!!!!!");
-//			}
-//		}
-
-		saveToDir("review_index.txt", rIndex);
+		saveToDir(REVIEW_INDEX_FILE, rIndex);
 	}
 
+	/**
+	 * Save the given object to disk under the given name. The file is saved to the dir that was passed to the
+	 * SlowWrite() function.
+	 */
 	private void saveToDir(String name, Object obj) {
 		FileOutputStream fileOut = null;
 		try {
@@ -218,10 +220,10 @@ public class SlowIndexWriter {
 
 //	public static void main(String[] args) throws IOException {
 //		String inputFile = "./1000.txt";
-//		String dir = "./data-index";
+//		String dir = "./MoodleTest";
 //
 //		SlowIndexWriter slw = new SlowIndexWriter();
-////		slw.slowWrite(inputFile, dir);
+//		slw.slowWrite(inputFile, dir);
 //		slw.removeIndex(dir);
 //	}
 }

@@ -2,12 +2,14 @@ package webdata;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 
 public class IndexReader {
-	private static String[] indicesNames = {"products_index.txt", "review_index.txt", "token_index.txt"};
+	private static final String PRODUCT_INDEX_FILE = "product_index.txt";
+	private static final String REVIEW_INDEX_FILE = "review_index.txt";
+	private static final String TOKEN_INDEX_FILE = "token_index.txt";
+	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
 
 	TokensIndex tokenIndex = null;
 	ProductIndex productIndex = null;
@@ -22,29 +24,33 @@ public class IndexReader {
 		loadIndices(dir);
 	}
 
+	/**
+	 * Load the index files from the disk to the main memory.
+	 * @param dir the directory from which the files should be loaded.
+	 */
 	private void loadIndices(String dir){
 		ObjectInputStream in = null;
 		try {
-			FileInputStream fileIn = new FileInputStream(dir + "/tokens_index.txt");
+			FileInputStream fileIn = new FileInputStream(dir + "/" + TOKEN_INDEX_FILE);
 			in = new ObjectInputStream(fileIn);
 			tokenIndex = (TokensIndex) in.readObject();
 			in.close();
 			fileIn.close();
 
-			fileIn = new FileInputStream(dir + "/products_index.txt");
+			fileIn = new FileInputStream(dir + "/" + PRODUCT_INDEX_FILE);
 			in = new ObjectInputStream(fileIn);
 			productIndex = (ProductIndex) in.readObject();
 			in.close();
 			fileIn.close();
 
-			fileIn = new FileInputStream(dir + "/review_index.txt");
+			fileIn = new FileInputStream(dir + "/" + REVIEW_INDEX_FILE);
 			in = new ObjectInputStream(fileIn);
 			reviewIndex = (ReviewIndex) in.readObject();
 			in.close();
 			fileIn.close();
 
 		} catch (IOException | ClassNotFoundException e) {
-			System.out.println("Error occurred while loading a index file.");
+			System.out.println("Error occurred while loading an index file.");
 			e.printStackTrace();
 			System.exit(1);
 		}
@@ -55,8 +61,8 @@ public class IndexReader {
 	* Returns null if there is no review with the given identifier
 	*/
 	public String getProductId(int reviewId) {
-		if (!reviewIndex.isReviewIdValid(reviewId)) { return null;}
-		return productIndex.getWordAt(reviewIndex.getProductNum(reviewId));
+		if (!reviewIndex.isReviewIdValid(reviewId - 1)) { return null;}
+		return productIndex.getWordAt(reviewIndex.getProductNum(reviewId - 1));
 	}
 
 	/**
@@ -64,8 +70,8 @@ public class IndexReader {
 	* Returns -1 if there is no review with the given identifier
 	*/
 	public int getReviewScore(int reviewId) {
-		if (!reviewIndex.isReviewIdValid(reviewId)) { return -1;}
-		return reviewIndex.getScore(reviewId);
+		if (!reviewIndex.isReviewIdValid(reviewId - 1)) { return -1;}
+		return reviewIndex.getScore(reviewId - 1);
 	}
 
 	/**
@@ -73,8 +79,8 @@ public class IndexReader {
 	* Returns -1 if there is no review with the given identifier
 	*/
 	public int getReviewHelpfulnessNumerator(int reviewId) {
-		if (!reviewIndex.isReviewIdValid(reviewId)) { return -1;}
-		return reviewIndex.getHelpfulnessNumerator(reviewId);
+		if (!reviewIndex.isReviewIdValid(reviewId-1)) { return -1;}
+		return reviewIndex.getHelpfulnessNumerator(reviewId-1);
 	}
 
 	/**
@@ -82,8 +88,8 @@ public class IndexReader {
 	* Returns -1 if there is no review with the given identifier
 	*/
 	public int getReviewHelpfulnessDenominator(int reviewId) {
-		if (!reviewIndex.isReviewIdValid(reviewId)) { return -1;}
-		return reviewIndex.getHelpfulnessDenominator(reviewId);
+		if (!reviewIndex.isReviewIdValid(reviewId - 1)) { return -1;}
+		return reviewIndex.getHelpfulnessDenominator(reviewId - 1);
 	}
 
 	/**
@@ -91,8 +97,8 @@ public class IndexReader {
 	* Returns -1 if there is no review with the given identifier
 	*/
 	public int getReviewLength(int reviewId) {
-		if (!reviewIndex.isReviewIdValid(reviewId)) { return -1;}
-		return reviewIndex.getLength(reviewId);
+		if (!reviewIndex.isReviewIdValid(reviewId - 1)) { return -1;}
+		return reviewIndex.getLength(reviewId - 1);
 	}
 
 	/**
@@ -139,12 +145,18 @@ public class IndexReader {
 			return enumerator;
 		}
 		int tokenInvertedIdxPtr = tokenIndex.get(currentTokenIdx).getInvertedIdxPtr();
-		int nextInvertedIdxPtr = tokenIndex.get(currentTokenIdx + 1).getInvertedIdxPtr();
 		int numReviews = tokenIndex.get(currentTokenIdx).getFrequency() * 2;
-		int bytesToRead = nextInvertedIdxPtr - tokenInvertedIdxPtr;
-		byte[] dest = new byte[bytesToRead];
+		byte[] dest = null;
+		int nextInvertedIdxPtr;
 		try {
-			RandomAccessFile file = new RandomAccessFile(this.dir + "/tokens_inverted_index.txt", "r");
+			RandomAccessFile file = new RandomAccessFile(this.dir + "/" + TOKEN_INVERTED_INDEX_FILE, "r");
+			if (currentTokenIdx + 1 <tokenIndex.get().size()) {
+				nextInvertedIdxPtr = tokenIndex.get(currentTokenIdx + 1).getInvertedIdxPtr();
+			} else {
+				nextInvertedIdxPtr = (int) file.length();
+			}
+			int bytesToRead = nextInvertedIdxPtr - tokenInvertedIdxPtr;
+			dest  = new byte[bytesToRead];
 			file.seek(tokenInvertedIdxPtr);
 			file.read(dest);
 		} catch (IOException e){

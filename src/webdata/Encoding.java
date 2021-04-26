@@ -9,17 +9,28 @@ import java.util.BitSet;
 import java.util.List;
 
 public class Encoding {
-    //TODO Check that adding 1 (to encode 0) doesn't mess things up.
+
+    /**
+     * Encode the given number using gamma encoding.
+     * The encoded output is a string representing the bytes of the number.
+     */
     public static String gammaEncode(int num) {
         String offset = Integer.toBinaryString(num + 1);
         return "1".repeat(offset.length() - 1) + "0" + offset.substring(1);
     }
 
+    /**
+     * Encode the given number using delta encoding.
+     * The encoded output is a string representing the bytes of the number.
+     */
     public static String deltaEncode(int num) {
         String offset = Integer.toBinaryString(num + 1);
         return gammaEncode(offset.length() - 1) + offset.substring(1);
     }
 
+    /**
+     * Decode the given string, which represents a binary sequence using gamma code.
+     */
     public static ArrayList<Integer> gammaDecode(String encoding) {
         ArrayList<Integer> output = new ArrayList<>();
         int bitsRead = 0;
@@ -32,6 +43,9 @@ public class Encoding {
         return output;
     }
 
+    /**
+     * Decode the given string, which represents a binary sequence using delta code.
+     */
     public static ArrayList<Integer> deltaDecode(String encoding) {
         ArrayList<Integer> output = new ArrayList<>();
         int bitsRead = 0;
@@ -47,14 +61,23 @@ public class Encoding {
         return output;
     }
 
+    /**
+     * Decode the given byte array, using gamma code.
+     */
     public static ArrayList<Integer> gammaDecode(byte[] code) {
         return gammaDecode(byteToString(code));
     }
 
+    /**
+     * Decode the given byte array, using delta code.
+     */
     public static ArrayList<Integer> deltaDecode(byte[] code) {
         return deltaDecode(byteToString(code));
     }
 
+    /**
+     * Convert the given string representing a bit sequence of numbers to a byte array.
+     */
     public static byte[] toByteArray(String encoding) {
         // Pad 0s to the nearest multiple of 8
         String padded = encoding + "0".repeat((int) Math.ceil((float) encoding.length() / 8) * 8 - encoding.length());
@@ -66,6 +89,9 @@ public class Encoding {
         }
     }
 
+    /**
+     * Convert the given byte array to a string representing the bits of the byte array.
+     */
     public static String byteToString(byte[] encoding) {
         StringBuilder s = new StringBuilder();
         for (byte b : encoding) {
@@ -76,10 +102,10 @@ public class Encoding {
         return s.toString();
     }
 
-    public static BitSet toBitSet(String encoding) {
-        return BitSet.valueOf(toByteArray(encoding));
-    }
-
+    /**
+     * Encode the given list of numbers using Group-Varint-Encoding. The first byte of the resulting byte array
+     * holds the number of bytes required to decode each of the next four numbers.
+     */
     public static byte[] groupVarintEncode(int[] nums) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         out.write(0);
@@ -103,6 +129,9 @@ public class Encoding {
         return output;
     }
 
+    /**
+     * Decode the given byte array to numbers, using Group-Varing-Encoding.
+     */
     public static int[] groupVarintDecode(byte[] encoding) {
         byte lengths = encoding[0];
         int[] output = new int[4];
@@ -133,27 +162,27 @@ public class Encoding {
     /*
     # TODO: for testing, remove later.
      */
-    public static void main(String args[]) {
-        // Gamma test
-        String encoding = gammaEncode(56) + gammaEncode(13) + gammaEncode(1) +
-                gammaEncode(2) + gammaEncode(1);
-        byte[] bytearr = toByteArray(encoding);
-        String fromarr = byteToString(bytearr);
-        ArrayList<Integer> nums = gammaDecode(bytearr);
-        System.out.println(nums);
-
-        // Delta test
-        encoding = deltaEncode(57) + deltaEncode(375);
-        bytearr = toByteArray(encoding);
-        fromarr = byteToString(bytearr);
-        nums = deltaDecode(bytearr);
-        System.out.println(nums);
-
-        // Group Varint test
-        int[] numgroup = {900000, 20, 450, 9};
-        byte[] bytegroup = groupVarintEncode(numgroup);
-        int[] decoded = groupVarintDecode(bytegroup);
-        System.out.println("Done.");
-    }
+//    public static void main(String args[]) {
+//        // Gamma test
+//        String encoding = gammaEncode(56) + gammaEncode(13) + gammaEncode(1) +
+//                gammaEncode(2) + gammaEncode(1);
+//        byte[] bytearr = toByteArray(encoding);
+//        String fromarr = byteToString(bytearr);
+//        ArrayList<Integer> nums = gammaDecode(bytearr);
+//        System.out.println(nums);
+//
+//        // Delta test
+//        encoding = deltaEncode(57) + deltaEncode(375);
+//        bytearr = toByteArray(encoding);
+//        fromarr = byteToString(bytearr);
+//        nums = deltaDecode(bytearr);
+//        System.out.println(nums);
+//
+//        // Group Varint test
+//        int[] numgroup = {900000, 20, 450, 9};
+//        byte[] bytegroup = groupVarintEncode(numgroup);
+//        int[] decoded = groupVarintDecode(bytegroup);
+//        System.out.println("Done.");
+//    }
 }
 

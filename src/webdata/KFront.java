@@ -38,6 +38,10 @@ public class KFront {
         return table;
     }
 
+    /**
+     * Create an encoded string representation of the given strings, using (k-1)-in-k front coding, according to the
+     * given k.
+     */
     public void createKFront(int k, List<String> strings) {
         StringBuilder sBuilder = new StringBuilder();
         int offset = 0;
@@ -68,6 +72,9 @@ public class KFront {
         concatString = sBuilder.toString();
     }
 
+    /**
+     * Find the largest common prefix of the two given strings.
+     */
     private String findCommonPrefix(String s1, String s2){
         StringBuilder commonPrefix = new StringBuilder();
         int i = 0;
