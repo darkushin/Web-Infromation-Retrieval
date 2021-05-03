@@ -5,8 +5,46 @@ import java.util.*;
 
 
 public class DataParser {
-    ArrayList<HashMap<String, String>> allReviews = new ArrayList<>();
-    public static final List<String> INTEREST_FIELDS = Arrays.asList("productId", "score", "helpfulness", "text");
+    public class Review{
+        private String text;
+        private String productId;
+        private String score;
+        private String helpfulness;
+
+        public String getText() {
+            return text;
+        }
+
+        public String getProductId() {
+            return productId;
+        }
+
+        public String getHelpfulness() {
+            return helpfulness;
+        }
+
+        public String getScore() {
+            return score;
+        }
+
+        public void setHelpfulness(String helpfulness) {
+            this.helpfulness = helpfulness;
+        }
+
+        public void setProductId(String productId) {
+            this.productId = productId;
+        }
+
+        public void setScore(String score) {
+            this.score = score;
+        }
+
+        public void setText(String text) {
+            this.text = text;
+        }
+    }
+
+//    public static final List<String> INTEREST_FIELDS = Arrays.asList("productId", "score", "helpfulness", "text");
 
 
     /**
@@ -14,43 +52,66 @@ public class DataParser {
      * of the review, i.e: productId->value, score->value, helpfulness->value, text->value.
      * inputFile is the path to the file containing the review data
      */
-    public DataParser(String inputFile) throws IOException {
-        BufferedReader br = new BufferedReader(new FileReader(inputFile));
-        String line;
-        StringBuilder review = new StringBuilder();
-        while((line = br.readLine()) != null) {
-            if (line.contains("product/productId")){
-                if (!review.toString().equals("")){
-                    allReviews.add(parse_review(review.toString()));
-                }
-                review = new StringBuilder(line);
-            }
-            else{
-                review.append(line);
-            }
+//    public DataParser(String inputFile) throws IOException {
+//        allReviews.add(parse_review(review.toString()));  // add the last review
+//    }
+
+    public List<Review> parseData(List<String> rawReviews){
+        LinkedList<Review> allReviews = new LinkedList<>();
+        for (String review: rawReviews){
+            allReviews.add(parseReview(review));
         }
-        allReviews.add(parse_review(review.toString()));  // add the last review
+        return allReviews;
     }
 
     /**
-     * Given a single review, parse the review and return a hash table containing only the relevant fields of the
-     * review, i.e: productId, score, helpfulness, text.
-     * @param review: the review that should be parsed.
-     * @return a hash table where the keys are the relevant fields mentioned above and their corresponding values.
+     * Given a single review, parse the review and return a Review object, containing all relevant information from the
+     * given review, i.e. productId, score, helpfulness and text.
      */
-    private static HashMap<String, String> parse_review(String review){
+    public Review parseReview(String review){
         List<String> fields = Arrays.asList(review.split("review/"));
-        HashMap<String, String> review_fields = new HashMap<String, String>();
+        Review parsedReview = new Review();
 
-        review_fields.put("productId", fields.get(0).split(": ")[1].split("product/")[0]);
+        parsedReview.setProductId(fields.get(0).split(": ")[1].split("product/")[0]);
         for (int i=1; i<fields.size(); i++){
             String field = fields.get(i);
-            List<String> field_value = Arrays.asList(field.split(": "));
-            if (INTEREST_FIELDS.contains(field_value.get(0))) {
-                review_fields.put(field_value.get(0), String.join(":", field_value.subList(1, field_value.size())));
+            List<String> fieldValue = Arrays.asList(field.split(": "));
+            switch (fieldValue.get(0)) {
+                case "text" -> parsedReview.setText(String.join(":", fieldValue.subList(1, fieldValue.size())));
+                case "helpfulness" -> parsedReview.setHelpfulness(fieldValue.get(1));
+                case "score" -> parsedReview.setScore(fieldValue.get(1));
             }
         }
-        return review_fields;
+        return parsedReview;
     }
+
+//    public static void main(String[] args) throws IOException {
+//        String inputFile = "./100.txt";
+//        BufferedReader br = new BufferedReader(new FileReader(inputFile));
+//        String line;
+//        StringBuilder review = new StringBuilder();
+//        List<String> data = new ArrayList<>();
+//        boolean stopFlag = false;
+//        int i = 0;
+//        while(!stopFlag && (line = br.readLine()) != null) {
+//            if (line.contains("product/productId")){
+//                if (i > 0) {
+//                    data.add(review.toString());
+//                    stopFlag = true;
+//                }
+//                else {
+//                    review.append(line);
+//                    i++;
+//                }
+//            }
+//            else{
+//                review.append(line);
+//            }
+//        }
+//        DataParser dt = new DataParser();
+//        dt.parseData(data);
+//        List<Review> reviews = dt.getParsedData();
+//        System.out.println("daniel");
+//    }
 }
 

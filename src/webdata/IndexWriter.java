@@ -15,13 +15,14 @@ public class IndexWriter {
 	private static final String REVIEW_INDEX_FILE = "review_index.txt";
 	private static final String TOKEN_INDEX_FILE = "token_index.txt";
 	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
+	private static final int REVIEWS_TO_LOAD = 1000;
 
 
 	/**
 	* Given product review data, creates an on disk index
 	* inputFile is the path to the file containing the review data
 	*/
-	public void slowWrite(String inputFile, String dir) {
+	public void write(String inputFile, String dir) {
 		this.dir = dir;
 		createDicts(inputFile);
 		createDir();
@@ -58,26 +59,39 @@ public class IndexWriter {
 
 	/**
 	 * Create temporary dictionaries that will store all information, before saving the indices to the disk.
-	 * @param inputFile
+	 * @param inputFile the file containing all reviews
 	 */
 	private void createDicts(String inputFile){
 		productIds = new TreeMap<>();
 		tokenDict = new TreeMap<>();
 		reviewIds = new TreeMap<>();
 
-		DataParser dataParser = null;
+		DataLoader dataLoader = null;
+		DataParser dataParser = new DataParser();
 		try {
-			dataParser = new DataParser(inputFile);
+			dataLoader = new DataLoader(inputFile);
 		} catch (IOException e) {
 			System.out.println("Error occurred while reading the reviews input file.");
 			System.exit(1);
 		}
+		int i=0;
+		for (String s: dataLoader){
+			DataParser.Review review = dataParser.parseReview(s);
+			addProductId(review.getProductId(), i + 1);
+			int length = addReviewText(review.getText(), i + 1);
+//			addReviewId(review, i, length);
+			i++;
+			if (i == REVIEWS_TO_LOAD){
+				i = 0;
+				productIds.clear();
+				tokenDict.clear();
+				reviewIds.clear();
+				// todo: save the current dicts to disk
+			}
 
-		for (int i = 0; i < dataParser.allReviews.size(); i++) {
-			addProductId(dataParser.allReviews.get(i).get("productId"), i + 1);
-			int length = addReviewText(dataParser.allReviews.get(i).get("text"), i + 1);
-			addReviewId(dataParser.allReviews.get(i), i, length);
 		}
+
+		// todo: merge all dictionaries
 	}
 
 	/**
@@ -129,15 +143,15 @@ public class IndexWriter {
 	/**
 	 * Adds all the information that is relevant to the given reviewId to the reviewIds dictionary.
 	 */
-	private void addReviewId(HashMap<String, String> review, int reviewId, int length) {
-		reviewIds.put(reviewId, new ArrayList<>());
-		// 0 - productId, 1 - score, 2 - helpfulness, 3 - length
-		for (String field : DataParser.INTEREST_FIELDS) {
-			if (field.equals("text")) { continue; }
-			reviewIds.get(reviewId).add(review.get(field));
-		}
-		reviewIds.get(reviewId).add(String.valueOf(length));
-	}
+//	private void addReviewId(DataParser.Review review, int reviewId, int length) {
+//		reviewIds.put(reviewId, new ArrayList<>());
+//		// 0 - productId, 1 - score, 2 - helpfulness, 3 - length
+//		for (String field : DataParser.INTEREST_FIELDS) {
+//			if (field.equals("text")) { continue; }
+//			reviewIds.get(reviewId).add(review.get(field));
+//		}
+//		reviewIds.get(reviewId).add(String.valueOf(length));
+//	}
 
 	/**
 	 * Creates and saves to the disk the product index, i.e. all the information that is related to products.
