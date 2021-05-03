@@ -5,7 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-public class SlowIndexWriter {
+public class IndexWriter {
 	private TreeMap<String, ArrayList<Integer>> tokenDict;  // keys are tokens, values are a list where odd cells are review ids including this token and even cells are the times the token appeared in the review.
 	private TreeMap<String, ArrayList<Integer>> productIds;
 	private TreeMap<Integer, ArrayList<String>> reviewIds;
