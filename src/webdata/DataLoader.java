@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -46,9 +45,6 @@ public class DataLoader implements Iterable<String> {
 
     public Iterator<String> iterator() {
         return new Iterator<>() {
-
-            private int currentIndex = 0;
-
             @Override
             public boolean hasNext(){
                 try {
@@ -69,27 +65,4 @@ public class DataLoader implements Iterable<String> {
             }
         };
     }
-
-//    public static void main(String[] args) {
-//        DataLoader dl = null;
-//        try {
-//            dl = new DataLoader("./100.txt");
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//            System.exit(1);
-//        }
-//
-//        for (int i = 0; i < 5; i++) {
-//            String s = dl.readSingleReview();
-//            System.out.println(s);
-//        }
-//
-//        ArrayList<String> readd = new ArrayList<>(dl.readMultipleReviews(10));
-//        System.out.println(readd.size());
-//
-//        for (String s : dl) {
-//            readd.add(s);
-//        }
-//        System.out.println(readd.size());
-//    }
 }
