@@ -6,9 +6,10 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class IndexWriter {
-	private TreeMap<String, ArrayList<Integer>> tokenDict;  // keys are tokens, values are a list where odd cells are review ids including this token and even cells are the times the token appeared in the review.
+	private TreeMap<String, Integer> tokenDict;  // token and tokenId
 	private TreeMap<String, ArrayList<Integer>> productIds;
 	private TreeMap<Integer, ArrayList<String>> reviewIds;
+	private ArrayList<Integer> tokenBuffer; // array list containing termIds and docIds pairs
 	private String dir;
 
 	private static final String PRODUCT_INDEX_FILE = "product_index.txt";
@@ -16,6 +17,7 @@ public class IndexWriter {
 	private static final String TOKEN_INDEX_FILE = "token_index.txt";
 	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
 	private static final int REVIEWS_TO_LOAD = 1000;
+	private static final int TOKEN_BUFFER_SIZE = 1000000;
 
 
 	/**
@@ -27,7 +29,7 @@ public class IndexWriter {
 		createDicts(inputFile);
 		createDir();
 		createProductIndex();
-		createTokenIndex();
+//		createTokenIndex();
 		createReviewIndex();
 	}
 
@@ -109,19 +111,14 @@ public class IndexWriter {
 			}
 			reviewLength += 1;
 			token = token.toLowerCase();
-			if (tokenDict.containsKey(token)){  // token already exists, update its entry
-				List<Integer> tokenInfo = tokenDict.get(token);
-				// check if the current review was already added to the token's review list. If yes, increase the # appearances of the token, else add it with # appearance = 1.
-				if (tokenInfo.get(tokenInfo.size()-2) == reviewIndex){
-					tokenInfo.set(tokenInfo.size()-1 ,tokenInfo.get(tokenInfo.size()-1) + 1);
-				} else {  // token appears first time in the given review
-					tokenInfo.add(reviewIndex);
-					tokenInfo.add(1);
-				}
+			int termId = tokenDict.computeIfAbsent(token, k -> tokenDict.size());
+			tokenBuffer.add(termId);
+			tokenBuffer.add(reviewIndex);
+			if (tokenBuffer.size() >= TOKEN_BUFFER_SIZE){
+				this.sortBuffer();
+				this.saveBuffer();
 			}
-			else{  // token seen for the first time, add a new entry for it
-				tokenDict.put(token, new ArrayList<>(Arrays.asList(reviewIndex, 1)));
-			}
+
 		}
 		return reviewLength;
 	}
@@ -175,19 +172,19 @@ public class IndexWriter {
 	 * Creates the index file for the tokens in the collection.
 	 * The index is created using the k-1-in-k front coding method.
 	 */
-	private void createTokenIndex(){
-		LinkedList<String> tokens = new LinkedList<>(tokenDict.keySet());
-		ArrayList<ArrayList<Integer>> vals = new ArrayList<>(tokenDict.values());
-		int k = 8;
-
-		KFront kf = new KFront(true);
-		kf.createKFront(k, tokens);
-
-		TokensIndex tIdx = new TokensIndex(k, this.dir);
-		tIdx.insertData(kf.getTable(), vals, kf.getConcatString());
-
-		saveToDir(TOKEN_INDEX_FILE, tIdx);
-	}
+//	private void createTokenIndex(){
+//		LinkedList<String> tokens = new LinkedList<>(tokenDict.keySet());
+//		ArrayList<ArrayList<Integer>> vals = new ArrayList<>(tokenDict.values());
+//		int k = 8;
+//
+//		KFront kf = new KFront(true);
+//		kf.createKFront(k, tokens);
+//
+//		TokensIndex tIdx = new TokensIndex(k, this.dir);
+//		tIdx.insertData(kf.getTable(), vals, kf.getConcatString());
+//
+//		saveToDir(TOKEN_INDEX_FILE, tIdx);
+//	}
 
 	/**
 	 * Creates and saves to the disk the review index which hold all information related to reviews.
@@ -229,5 +226,13 @@ public class IndexWriter {
 			e.printStackTrace();
 			System.exit(1);
 		}
+	}
+
+	public static void main(String[] args) {
+		String inputFile = "./100.txt";
+		String dir = "./Data_Index";
+		IndexWriter indexWriter = new IndexWriter();
+		indexWriter.write(inputFile, dir);
+		System.out.println("here");
 	}
 }
