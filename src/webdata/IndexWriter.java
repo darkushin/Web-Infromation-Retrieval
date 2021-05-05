@@ -9,7 +9,11 @@ public class IndexWriter {
 	private TreeMap<String, Integer> tokenDict;  // token and tokenId
 	private TreeMap<String, ArrayList<Integer>> productIds;
 	private TreeMap<Integer, ArrayList<String>> reviewIds;
-	private ArrayList<Integer> tokenBuffer; // array list containing termIds and docIds pairs
+
+	private int[][] tokenBuffer; // Array of termID, docID pairs. Regular array to sort in-place
+	private int tokenBufferPointer;
+	private ObjectOutputStream tokenBufferWriter;
+
 	private String dir;
 
 	private static final String PRODUCT_INDEX_FILE = "product_index.txt";
@@ -17,7 +21,7 @@ public class IndexWriter {
 	private static final String TOKEN_INDEX_FILE = "token_index.txt";
 	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
 	private static final int REVIEWS_TO_LOAD = 1000;
-	private static final int TOKEN_BUFFER_SIZE = 1000000;
+	private static final int TOKEN_BUFFER_SIZE = 1000;
 
 
 	/**
@@ -26,11 +30,11 @@ public class IndexWriter {
 	*/
 	public void write(String inputFile, String dir) {
 		this.dir = dir;
-		createDicts(inputFile);
 		createDir();
-		createProductIndex();
+		createDicts(inputFile);
+//		createProductIndex();
 //		createTokenIndex();
-		createReviewIndex();
+//		createReviewIndex();
 	}
 
 	/**
@@ -68,6 +72,15 @@ public class IndexWriter {
 		tokenDict = new TreeMap<>();
 		reviewIds = new TreeMap<>();
 
+		tokenBuffer = new int[2][TOKEN_BUFFER_SIZE];
+		tokenBufferPointer = 0;
+		try {
+			tokenBufferWriter = new ObjectOutputStream(new FileOutputStream(dir + "/tokenpairs.txt", true));
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+
 		DataLoader dataLoader = null;
 		DataParser dataParser = new DataParser();
 		try {
@@ -92,6 +105,12 @@ public class IndexWriter {
 			}
 
 		}
+		try {
+			tokenBufferWriter.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
 
 		// todo: merge all dictionaries
 	}
@@ -112,15 +131,45 @@ public class IndexWriter {
 			reviewLength += 1;
 			token = token.toLowerCase();
 			int termId = tokenDict.computeIfAbsent(token, k -> tokenDict.size());
-			tokenBuffer.add(termId);
-			tokenBuffer.add(reviewIndex);
-			if (tokenBuffer.size() >= TOKEN_BUFFER_SIZE){
+			tokenBuffer[0][tokenBufferPointer] = termId;
+			tokenBuffer[1][tokenBufferPointer] = reviewIndex;
+			tokenBufferPointer++;
+			if (tokenBufferPointer >= TOKEN_BUFFER_SIZE){
 				this.sortBuffer();
 				this.saveBuffer();
+				this.clearBuffer();
 			}
-
 		}
 		return reviewLength;
+	}
+
+	private void sortBuffer() {
+		// TODO Currently this is not in-place.
+		Arrays.sort(tokenBuffer, Comparator.comparingInt(a -> a[0]));
+	}
+
+	private void saveBuffer() {
+		for (int i = 0; i < TOKEN_BUFFER_SIZE; i++) {
+			try {
+				tokenBufferWriter.writeInt(tokenBuffer[0][i]);
+				tokenBufferWriter.writeInt(tokenBuffer[1][i]);
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+		}
+
+		// TODO should we write the entire buffer?
+//		try {
+//			tokenBufferWriter.writeObject(tokenBuffer);
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+	}
+
+	private void clearBuffer() {
+		tokenBuffer = new int[2][TOKEN_BUFFER_SIZE];
+		tokenBufferPointer = 0;
 	}
 
 	/**
