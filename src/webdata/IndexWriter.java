@@ -13,7 +13,7 @@ public class IndexWriter {
 
 	private int[][] tokenBuffer; // Array of termID, docID pairs. Regular array to sort in-place
 	private int tokenBufferPointer;
-	private ObjectOutputStream tokenBufferWriter;
+	private int tokenFilesNumber = 0;
 
 	private String dir;
 
@@ -23,6 +23,7 @@ public class IndexWriter {
 	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
 	private static final int REVIEWS_TO_LOAD = 1000;
 	private static final int TOKEN_BUFFER_SIZE = 10;
+
 
 
 	/**
@@ -74,14 +75,9 @@ public class IndexWriter {
 		reviewIds = new TreeMap<>();
 		invertedTokenDict = new ArrayList<>();
 
-		tokenBuffer = new int[2][TOKEN_BUFFER_SIZE];
-		tokenBufferPointer = 0;
-		try {
-			tokenBufferWriter = new ObjectOutputStream(new FileOutputStream(dir + "/tokenpairs.txt", true));
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
+//		tokenBuffer = new int[TOKEN_BUFFER_SIZE][2];
+//		tokenBufferPointer = 0;
+		this.clearBuffer();
 
 		DataLoader dataLoader = null;
 		DataParser dataParser = new DataParser();
@@ -107,13 +103,6 @@ public class IndexWriter {
 			}
 
 		}
-		try {
-			tokenBufferWriter.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-
 		// todo: merge all dictionaries
 	}
 
@@ -126,7 +115,7 @@ public class IndexWriter {
 	private int  addReviewText(String reviewText, int reviewIndex){
 		String[] tokens = reviewText.split("[^a-zA-Z0-9]");  // split to alphanumeric tokens
 		int reviewLength = 0;
-		tokens = new String[]{"I", "bought", "I", "I"};
+//		tokens = new String[]{"I", "bought", "I", "I"};
 		for (String token: tokens){
 			if (!token.matches("[a-zA-Z0-9]+")){
 				continue;
@@ -135,8 +124,8 @@ public class IndexWriter {
 			token = token.toLowerCase();
 			int termId = tokenDict.computeIfAbsent(token, k -> tokenDict.size());
 			if (termId == invertedTokenDict.size()) { invertedTokenDict.add(token);}  // if a new token was added, add it also to the invertedTokenDict
-			tokenBuffer[0][tokenBufferPointer] = termId;
-			tokenBuffer[1][tokenBufferPointer] = reviewIndex;
+			tokenBuffer[tokenBufferPointer][0] = termId;
+			tokenBuffer[tokenBufferPointer][1] = reviewIndex;
 			tokenBufferPointer++;
 			if (tokenBufferPointer == TOKEN_BUFFER_SIZE){
 				this.sortBuffer();
@@ -148,32 +137,30 @@ public class IndexWriter {
 	}
 
 	private void sortBuffer() {
-		// TODO Currently this is not in-place.
-		Arrays.sort(tokenBuffer, Comparator.comparingInt(a -> a[0]));
-//		Arrays.sort(tokenBuffer,  (a, b) -> invertedTokenDict.get(a[0]).compareTo(invertedTokenDict.get(a[1])));
+		Arrays.sort(tokenBuffer, Comparator.comparing(a -> invertedTokenDict.get(a[0])));
 	}
 
 	private void saveBuffer() {
+		ObjectOutputStream tokenBufferWriter = null;
+		try {
+			tokenBufferWriter = new ObjectOutputStream(new FileOutputStream(dir + "/tokenpairs_" + tokenFilesNumber + ".txt"));
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
 		for (int i = 0; i < TOKEN_BUFFER_SIZE; i++) {
 			try {
-				tokenBufferWriter.writeInt(tokenBuffer[0][i]);
-				tokenBufferWriter.writeInt(tokenBuffer[1][i]);
+				tokenBufferWriter.writeInt(tokenBuffer[i][0]);
+				tokenBufferWriter.writeInt(tokenBuffer[i][1]);
 			} catch (IOException e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
 		}
-
-		// TODO should we write the entire buffer?
-//		try {
-//			tokenBufferWriter.writeObject(tokenBuffer);
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
 	}
 
 	private void clearBuffer() {
-		tokenBuffer = new int[2][TOKEN_BUFFER_SIZE];
+		tokenBuffer = new int[TOKEN_BUFFER_SIZE][2];
 		tokenBufferPointer = 0;
 	}
 
