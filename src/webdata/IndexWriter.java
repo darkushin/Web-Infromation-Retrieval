@@ -22,7 +22,7 @@ public class IndexWriter {
 	private static final String TOKEN_INDEX_FILE = "token_index.txt";
 	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
 	private static final int REVIEWS_TO_LOAD = 1000;
-	private static final int TOKEN_BUFFER_SIZE = 10;
+	private static final int TOKEN_BUFFER_SIZE = 60000;
 
 
 
@@ -75,8 +75,14 @@ public class IndexWriter {
 		reviewIds = new TreeMap<>();
 		invertedTokenDict = new ArrayList<>();
 
-//		tokenBuffer = new int[TOKEN_BUFFER_SIZE][2];
-//		tokenBufferPointer = 0;
+		// todo: remove the directory creation from here!
+		try {
+			Files.createDirectories(Path.of(dir + "/iteration_1"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+
 		this.clearBuffer();
 
 		DataLoader dataLoader = null;
@@ -84,6 +90,7 @@ public class IndexWriter {
 		try {
 			dataLoader = new DataLoader(inputFile);
 		} catch (IOException e) {
+			e.printStackTrace();
 			System.out.println("Error occurred while reading the reviews input file.");
 			System.exit(1);
 		}
@@ -93,17 +100,14 @@ public class IndexWriter {
 			addProductId(review.getProductId(), i + 1);
 			int length = addReviewText(review.getText(), i + 1);
 //			addReviewId(review, i, length);
-			i++;
-			if (i == REVIEWS_TO_LOAD){
-				i = 0;
-				productIds.clear();
-				tokenDict.clear();
-				reviewIds.clear();
-				// todo: save the current dicts to disk
-			}
-
 		}
-		// todo: merge all dictionaries
+		this.saveBuffer();
+
+		// todo: merge sort all files - maybe move to a new function
+		Comparator<Integer> cmp = Comparator.comparing(a -> invertedTokenDict.get(a));
+		ExternalMergeSort externalMergeSort = new ExternalMergeSort(cmp, tokenFilesNumber, 1000, dir);
+		externalMergeSort.sort();
+
 	}
 
 	/**
@@ -142,13 +146,14 @@ public class IndexWriter {
 
 	private void saveBuffer() {
 		ObjectOutputStream tokenBufferWriter = null;
+		this.tokenFilesNumber++;
 		try {
-			tokenBufferWriter = new ObjectOutputStream(new FileOutputStream(dir + "/tokenpairs_" + tokenFilesNumber + ".txt"));
+			tokenBufferWriter = new ObjectOutputStream(new FileOutputStream(dir + "/iteration_1/" + tokenFilesNumber + ".txt"));
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
-		for (int i = 0; i < TOKEN_BUFFER_SIZE; i++) {
+		for (int i = 0; i < tokenBufferPointer; i++) {
 			try {
 				tokenBufferWriter.writeInt(tokenBuffer[i][0]);
 				tokenBufferWriter.writeInt(tokenBuffer[i][1]);

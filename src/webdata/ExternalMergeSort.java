@@ -1,25 +1,168 @@
 package webdata;
 
-import java.util.List;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 
 public class ExternalMergeSort {
-    private List<String> invertedTokenDict;
-    private String filePrefix;
-    int numFiles;
-    int blockSize;
+//    private List<String> invertedTokenDict;
+    private Comparator<Integer> cmp;
+//    private String filePrefix;
+    private int numFiles;  // current number of files to merge
+    private int blockSize;
+    private String dir;
+    private int iteration;  // number of merges performed (including current iteration). 1 means we are currently in the first iteration.
+    private int savedFiles;  // number of files that were saved in the current iteration.
 
-    ExternalMergeSort(List<String> invertedTokenDict, int numFiles, String filePrefix, int blockSize){
-        this.invertedTokenDict = invertedTokenDict;
+    private int AVAILABLE_BLOCKS = 60000;
+
+    ExternalMergeSort(Comparator<Integer> cmp, int numFiles, int blockSize, String dir){
+        this.cmp = cmp;
         this.numFiles = numFiles;
-        this.filePrefix = filePrefix;
+//        this.filePrefix = filePrefix;
         this.blockSize = blockSize;
+        this.dir = dir;
+        this.iteration = 1;
+        this.savedFiles = 0;
     }
 
-    /**
-     * Merge all files in the given range
-     */
-    private void mergeFiles(int start, int end){
-        // todo: iterate over all files in the range and take every time the smallest element.
-        // when a block is full, save it to the new file until done with all files
+    public void sort(){
+        try {
+            SingleMerge singleMerge = new SingleMerge(1, numFiles);
+        } catch (IOException e){
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+
     }
+
+
+
+    /** Holds all the information required for a single iteration of the merge-sort algorithm */
+    private class SingleMerge{
+        private ArrayList<ObjectInputStream> fileReaders;
+        private ArrayList<Deque<int[]>> fileDeques;
+        private final int dequeSize;
+        private int[] outputBlock;
+        private int outputPtr;
+        private ObjectOutputStream mergedOutput;
+
+
+        private SingleMerge(int start, int end) throws IOException {
+            // make a new dir for the files of this iteration:
+            Files.createDirectories(Path.of(dir + "/iteration_" + (iteration+1)));
+
+            this.dequeSize = (AVAILABLE_BLOCKS - 1) / (end-start);
+            this.mergedOutput = new ObjectOutputStream(new FileOutputStream(dir + "/iteration_" + (iteration+1) + "/" + (savedFiles+1)));
+            for (int i=start; i<=end; i++){
+                FileInputStream fileIn = new FileInputStream(dir + "/iteration_" + iteration + "/" + i);
+                this.fileReaders.add(new ObjectInputStream(fileIn));
+                this.fileDeques.add(new ArrayDeque<int[]>(this.dequeSize));
+            }
+        }
+
+        private void merge() throws IOException {
+            this.clearOutputBlock();
+            this.loadAll();
+            while (!this.areAllDequesEmpty()){
+                int minIndex = this.getMin();
+                this.extractMin(minIndex);
+            }
+            this.saveOutputBlock();  // needed in case the block wasn't full
+            this.removeDir(dir + "/iteration_" + iteration);  // remove the temp dir in which the files of this iteration were stored
+        }
+
+        /** Add the first element in the deque[minIndex] to the output block.
+         * If the block is full, save it to the output file and clear the block.
+         * If the deque is empty, load the next elements in the file given in minIndex.
+         */
+        private void extractMin(int minIndex) throws IOException {
+            int[] minPair = fileDeques.get(minIndex).pollFirst();
+            this.outputBlock[this.outputPtr] = minPair[0];
+            this.outputBlock[this.outputPtr + 1] = minPair[1];
+            this.outputPtr += 2;
+            if (this.outputPtr == blockSize * 2){
+                this.saveOutputBlock();
+                this.clearOutputBlock();
+            }
+            if (fileDeques.get(minIndex).isEmpty() && fileReaders.get(minIndex) != null){
+                this.loadData(minIndex, dequeSize);
+            }
+        }
+
+        /** Return the index of the minimal element of the first elements (smallest elements) in all deques. */
+        private int getMin(){
+            int minIndex = -1;
+            for (int i=0; i<fileDeques.size(); i++){
+                if (fileDeques.get(i).size() > 0){
+                    if (minIndex == -1) {
+                        minIndex = i;
+                    } else if (cmp.compare(fileDeques.get(minIndex).peekFirst()[0], fileDeques.get(i).getFirst()[0]) > 0){
+                        minIndex = i;
+                    }
+                }
+            }
+            return minIndex;
+        }
+
+        private void loadAll() throws IOException {
+            for (int i = 0; i <= this.fileReaders.size(); i++){
+                this.loadData(i, this.dequeSize);
+            }
+        }
+
+        /** Load numbBlocks from the file given by index i to the matching deque*/
+        private void loadData(int i, int numBlocks) throws IOException {
+            for (int j=0; j<numBlocks*blockSize; j++){
+                int[] pair = new int[2];
+                try {
+                    pair[0] = fileReaders.get(i).readInt();
+                    pair[1] = fileReaders.get(i).readInt();
+                } catch (EOFException e){
+                    // Reached end of file.
+                    fileReaders.get(i).close();
+                    fileReaders.set(i, null);
+                    break;
+                }
+                fileDeques.get(i).add(pair);
+            }
+        }
+
+        private boolean areAllDequesEmpty(){
+            for (Deque<int[]> d: fileDeques){
+                if (!d.isEmpty()){
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private void clearOutputBlock(){
+            outputBlock = new int[blockSize*2];
+            outputPtr = 0;
+        }
+
+        private void saveOutputBlock() throws IOException {
+            for (int i = 0; i < this.outputPtr; i++){
+                this.mergedOutput.writeInt(this.outputBlock[i]);
+            }
+        }
+
+        private void removeDir(String dir){
+            File dirToRemove = new File(dir);
+            File[] contents = dirToRemove.listFiles();
+            if (contents != null) {
+                for (File file : contents) {
+                    file.delete();
+                }
+            }
+            dirToRemove.delete();
+        }
+
+
+    }
+
+
 }
