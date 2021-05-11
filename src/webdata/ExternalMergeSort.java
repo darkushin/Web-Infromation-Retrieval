@@ -10,18 +10,18 @@ public class ExternalMergeSort {
     private Comparator<Integer> cmp;
 //    private String filePrefix;
     private int numFiles;  // current number of files to merge
-    private int blockSize;
+    private int pairsInBlock;
     private String dir;
     private int iteration;  // number of merges performed (including current iteration). 1 means we are currently in the first iteration.
     private int savedFiles;  // number of files that were saved in the current iteration.
 
     private int AVAILABLE_BLOCKS = 60000;
 
-    ExternalMergeSort(Comparator<Integer> cmp, int numFiles, int blockSize, String dir){
+    ExternalMergeSort(Comparator<Integer> cmp, int numFiles, int pairsInBlock, String dir){
         this.cmp = cmp;
         this.numFiles = numFiles;
 //        this.filePrefix = filePrefix;
-        this.blockSize = blockSize;
+        this.pairsInBlock = pairsInBlock;
         this.dir = dir;
         this.iteration = 1;
         this.savedFiles = 0;
@@ -30,6 +30,7 @@ public class ExternalMergeSort {
     public void sort(){
         try {
             SingleMerge singleMerge = new SingleMerge(1, numFiles);
+            singleMerge.merge();
         } catch (IOException e){
             e.printStackTrace();
             System.exit(1);
@@ -44,7 +45,7 @@ public class ExternalMergeSort {
     private class SingleMerge{
         private ArrayList<ObjectInputStream> fileReaders;
         private ArrayList<Deque<int[]>> fileDeques;
-        private final int dequeSize;
+        private final int numPairsInDeque;
         private int[] outputBlock;
         private int outputPtr;
         private ObjectOutputStream mergedOutput;
@@ -54,12 +55,15 @@ public class ExternalMergeSort {
             // make a new dir for the files of this iteration:
             Files.createDirectories(Path.of(dir + "/iteration_" + (iteration+1)));
 
-            this.dequeSize = (AVAILABLE_BLOCKS - 1) / (end-start);
+            this.numPairsInDeque = ((AVAILABLE_BLOCKS - 1) / (end-start+1)) * pairsInBlock;
             this.mergedOutput = new ObjectOutputStream(new FileOutputStream(dir + "/iteration_" + (iteration+1) + "/" + (savedFiles+1)));
+            this.fileReaders = new ArrayList<>(end-start+1);
+            this.fileDeques = new ArrayList<>(end-start+1);
+
             for (int i=start; i<=end; i++){
                 FileInputStream fileIn = new FileInputStream(dir + "/iteration_" + iteration + "/" + i);
                 this.fileReaders.add(new ObjectInputStream(fileIn));
-                this.fileDeques.add(new ArrayDeque<int[]>(this.dequeSize));
+                this.fileDeques.add(new ArrayDeque<int[]>(this.numPairsInDeque));
             }
         }
 
@@ -83,12 +87,12 @@ public class ExternalMergeSort {
             this.outputBlock[this.outputPtr] = minPair[0];
             this.outputBlock[this.outputPtr + 1] = minPair[1];
             this.outputPtr += 2;
-            if (this.outputPtr == blockSize * 2){
+            if (this.outputPtr == pairsInBlock * 2){
                 this.saveOutputBlock();
                 this.clearOutputBlock();
             }
             if (fileDeques.get(minIndex).isEmpty() && fileReaders.get(minIndex) != null){
-                this.loadData(minIndex, dequeSize);
+                this.loadData(minIndex, numPairsInDeque);
             }
         }
 
@@ -108,14 +112,14 @@ public class ExternalMergeSort {
         }
 
         private void loadAll() throws IOException {
-            for (int i = 0; i <= this.fileReaders.size(); i++){
-                this.loadData(i, this.dequeSize);
+            for (int i = 0; i < this.fileReaders.size(); i++){
+                this.loadData(i, this.numPairsInDeque);
             }
         }
 
         /** Load numbBlocks from the file given by index i to the matching deque*/
         private void loadData(int i, int numBlocks) throws IOException {
-            for (int j=0; j<numBlocks*blockSize; j++){
+            for (int j = 0; j<numBlocks* pairsInBlock; j++){
                 int[] pair = new int[2];
                 try {
                     pair[0] = fileReaders.get(i).readInt();
@@ -140,7 +144,7 @@ public class ExternalMergeSort {
         }
 
         private void clearOutputBlock(){
-            outputBlock = new int[blockSize*2];
+            outputBlock = new int[pairsInBlock *2];
             outputPtr = 0;
         }
 

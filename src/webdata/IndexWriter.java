@@ -21,8 +21,8 @@ public class IndexWriter {
 	private static final String REVIEW_INDEX_FILE = "review_index.txt";
 	private static final String TOKEN_INDEX_FILE = "token_index.txt";
 	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
-	private static final int REVIEWS_TO_LOAD = 1000;
-	private static final int TOKEN_BUFFER_SIZE = 60000;
+	private static final int PAIRS_IN_BLOCK = 1000;
+	private static final int TOKEN_BUFFER_SIZE = 100;
 
 
 
@@ -105,7 +105,7 @@ public class IndexWriter {
 
 		// todo: merge sort all files - maybe move to a new function
 		Comparator<Integer> cmp = Comparator.comparing(a -> invertedTokenDict.get(a));
-		ExternalMergeSort externalMergeSort = new ExternalMergeSort(cmp, tokenFilesNumber, 1000, dir);
+		ExternalMergeSort externalMergeSort = new ExternalMergeSort(cmp, tokenFilesNumber, PAIRS_IN_BLOCK, dir);
 		externalMergeSort.sort();
 
 	}
@@ -148,7 +148,7 @@ public class IndexWriter {
 		ObjectOutputStream tokenBufferWriter = null;
 		this.tokenFilesNumber++;
 		try {
-			tokenBufferWriter = new ObjectOutputStream(new FileOutputStream(dir + "/iteration_1/" + tokenFilesNumber + ".txt"));
+			tokenBufferWriter = new ObjectOutputStream(new FileOutputStream(dir + "/iteration_1/" + tokenFilesNumber));
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.exit(1);
