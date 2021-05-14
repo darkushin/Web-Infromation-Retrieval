@@ -28,6 +28,7 @@ public class ExternalMergeSort {
     }
 
     public void sort(){
+        // todo: need to handle the case where more than one iteration is needed
         try {
             SingleMerge singleMerge = new SingleMerge(1, numFiles);
             singleMerge.merge();
@@ -119,7 +120,7 @@ public class ExternalMergeSort {
 
         /** Load numbBlocks from the file given by index i to the matching deque*/
         private void loadData(int i, int numBlocks) throws IOException {
-            for (int j = 0; j<numBlocks* pairsInBlock; j++){
+            for (int j = 0; j<numBlocks * pairsInBlock; j++){
                 int[] pair = new int[2];
                 try {
                     pair[0] = fileReaders.get(i).readInt();

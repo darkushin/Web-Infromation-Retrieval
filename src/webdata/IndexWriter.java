@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class IndexWriter {
-	private HashMap<String, Integer> tokenDict;  // token: tokenId
+	private HashMap<String, ArrayList<Integer>> tokenDict;  // token: tokenId
 	private ArrayList<String> invertedTokenDict;  // tokenId: token
 	private TreeMap<String, ArrayList<Integer>> productIds;
 	private TreeMap<Integer, ArrayList<String>> reviewIds;
@@ -35,7 +35,7 @@ public class IndexWriter {
 		createDir();
 		createDicts(inputFile);
 //		createProductIndex();
-//		createTokenIndex();
+		createTokenIndex();
 //		createReviewIndex();
 	}
 
@@ -82,7 +82,6 @@ public class IndexWriter {
 			e.printStackTrace();
 		}
 
-
 		this.clearBuffer();
 
 		DataLoader dataLoader = null;
@@ -119,14 +118,14 @@ public class IndexWriter {
 	private int  addReviewText(String reviewText, int reviewIndex){
 		String[] tokens = reviewText.split("[^a-zA-Z0-9]");  // split to alphanumeric tokens
 		int reviewLength = 0;
-//		tokens = new String[]{"I", "bought", "I", "I"};
 		for (String token: tokens){
 			if (!token.matches("[a-zA-Z0-9]+")){
 				continue;
 			}
 			reviewLength += 1;
 			token = token.toLowerCase();
-			int termId = tokenDict.computeIfAbsent(token, k -> tokenDict.size());
+			ArrayList<Integer> termIdArr = tokenDict.computeIfAbsent(token, k -> new ArrayList<Integer>(tokenDict.size()));
+			int termId = termIdArr.get(0);
 			if (termId == invertedTokenDict.size()) { invertedTokenDict.add(token);}  // if a new token was added, add it also to the invertedTokenDict
 			tokenBuffer[tokenBufferPointer][0] = termId;
 			tokenBuffer[tokenBufferPointer][1] = reviewIndex;
@@ -218,19 +217,21 @@ public class IndexWriter {
 	 * Creates the index file for the tokens in the collection.
 	 * The index is created using the k-1-in-k front coding method.
 	 */
-//	private void createTokenIndex(){
-//		LinkedList<String> tokens = new LinkedList<>(tokenDict.keySet());
-//		ArrayList<ArrayList<Integer>> vals = new ArrayList<>(tokenDict.values());
-//		int k = 8;
-//
-//		KFront kf = new KFront(true);
-//		kf.createKFront(k, tokens);
-//
-//		TokensIndex tIdx = new TokensIndex(k, this.dir);
-//		tIdx.insertData(kf.getTable(), vals, kf.getConcatString());
-//
-//		saveToDir(TOKEN_INDEX_FILE, tIdx);
-//	}
+	private void createTokenIndex(){
+		LinkedList<String> tokens = new LinkedList<>(tokenDict.keySet());
+		this.prepareTokenValues();
+
+		ArrayList<ArrayList<Integer>> vals = new ArrayList<>(tokenDict.values());
+		int k = 8;
+
+		KFront kf = new KFront(true);
+		kf.createKFront(k, tokens);
+
+		TokensIndex tIdx = new TokensIndex(k, this.dir);
+		tIdx.insertData(kf.getTable(), vals, kf.getConcatString());
+
+		saveToDir(TOKEN_INDEX_FILE, tIdx);
+	}
 
 	/**
 	 * Creates and saves to the disk the review index which hold all information related to reviews.
@@ -272,6 +273,33 @@ public class IndexWriter {
 			e.printStackTrace();
 			System.exit(1);
 		}
+	}
+
+	/**
+	 * Read the termID-docID file, and convert all the appearances to the format of token:[doc1-#appearances, doc2-#appearance]
+	 * this way, the same code as in ex1 can be used to create the token index.
+	 */
+	private void prepareTokenValues(){
+		// todo: figure out how to get the file name
+		String fileName = "bla";
+		FileInputStream fileIn = null;
+		try {
+			fileIn = new FileInputStream(fileName);
+			ObjectInputStream file = new ObjectInputStream(fileIn);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		int previousTokenId = 0;
+		int previousDocId = 0;
+
+		// while we didn't reach EOF, read two integers at a time - termID and docID.
+		// for every such pair, check if the termID is the same as the termID of the previous:
+		// If not - find the token matching to the termID (using invertedTermId dict) and add the list created here to the tokenDict.
+		// If yes - continue to update the list of this token - this list is the same as in ex1: pairs of docId-#appearances, i.e. for every document count the appearances of the token in the doc (can be done easily because they are consecutive in this case)/
+			// For every pair, as the termID is the same, check if the docId matches the previous docId:
+			// If yes - raise the count for this docId
+			// If not - add a new entry for this docId and set its appearances to 1
+
 	}
 
 	public static void main(String[] args) {
