@@ -77,7 +77,7 @@ public class IndexWriter {
 
 		// todo: remove the directory creation from here!
 		try {
-			Files.createDirectories(Path.of(dir + "/iteration_1"));
+			Files.createDirectories(Path.of(this.dir + "/iteration_1"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -124,7 +124,7 @@ public class IndexWriter {
 			}
 			reviewLength += 1;
 			token = token.toLowerCase();
-			ArrayList<Integer> termIdArr = tokenDict.computeIfAbsent(token, k -> new ArrayList<Integer>(tokenDict.size()));
+			ArrayList<Integer> termIdArr = tokenDict.computeIfAbsent(token, k -> new ArrayList<Integer>(Arrays.asList(tokenDict.size())));
 			int termId = termIdArr.get(0);
 			if (termId == invertedTokenDict.size()) { invertedTokenDict.add(token);}  // if a new token was added, add it also to the invertedTokenDict
 			tokenBuffer[tokenBufferPointer][0] = termId;
@@ -218,9 +218,10 @@ public class IndexWriter {
 	 * The index is created using the k-1-in-k front coding method.
 	 */
 	private void createTokenIndex(){
+		// Convert the current tokenDict of {token:termId} pairs to {token:[docId1,#freq1,docId2,#freq2,...]} format.
+		this.prepareTokenDict();
+		// todo: need to sort the dictionary by keys!
 		LinkedList<String> tokens = new LinkedList<>(tokenDict.keySet());
-		this.prepareTokenValues();
-
 		ArrayList<ArrayList<Integer>> vals = new ArrayList<>(tokenDict.values());
 		int k = 8;
 
@@ -279,18 +280,53 @@ public class IndexWriter {
 	 * Read the termID-docID file, and convert all the appearances to the format of token:[doc1-#appearances, doc2-#appearance]
 	 * this way, the same code as in ex1 can be used to create the token index.
 	 */
-	private void prepareTokenValues(){
-		// todo: figure out how to get the file name
-		String fileName = "bla";
+	private void prepareTokenDict(){
+		// todo: change the fileName to be according to the directory!
+		String fileName = this.dir + "/iteration_2/1";
 		FileInputStream fileIn = null;
+		ObjectInputStream termFile = null;
 		try {
 			fileIn = new FileInputStream(fileName);
-			ObjectInputStream file = new ObjectInputStream(fileIn);
+			termFile = new ObjectInputStream(fileIn);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		int previousTokenId = 0;
-		int previousDocId = 0;
+
+		// read all the integers from the file until reaching EOF
+		try{
+			int previousTermId = 0;
+			int previousDocId = 0;
+			ArrayList<Integer> tokenVals = new ArrayList<>();  // odd places-docId, even places-freq in doc.
+			while (true){ // todo: ugly solution, any better idea?
+				int termId = termFile.readInt();
+				int docId = termFile.readInt();
+				if (termId == previousTermId){
+					if (docId == previousDocId){ // token already appeared in the doc - increment the frequency
+						tokenVals.set(tokenVals.size()-1, tokenVals.get(tokenVals.size()-1) + 1);
+					} else { // first appearance of the token in this doc
+						tokenVals.addAll(Arrays.asList(docId, 1));
+						previousDocId = docId;
+					}
+				} else {
+					// save the values of the previous token:
+					String token = invertedTokenDict.get(previousTermId);
+					tokenDict.put(token, tokenVals);
+
+					// start a new array for the new term:
+					tokenVals = new ArrayList<>(Arrays.asList(docId, 1));
+					previousTermId = termId;
+					previousDocId = docId;
+				}
+			}
+
+		} catch (EOFException e){  // reached EOF and finished converting all tokens.
+			return;
+		} catch (Exception e){
+			e.printStackTrace();
+			System.out.println("Error occurred while converting token dict.");
+			System.exit(1);
+		}
+
 
 		// while we didn't reach EOF, read two integers at a time - termID and docID.
 		// for every such pair, check if the termID is the same as the termID of the previous:
