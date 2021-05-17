@@ -8,14 +8,14 @@ import java.util.*;
 public class ExternalMergeSort {
     private List<String> inv;
     private Comparator<Integer> cmp;
-//    private String filePrefix;
+    private String folderName = "/iteration_";
     private int numFiles;  // current number of files to merge
     private int pairsInBlock;
     private String dir;
     private int iteration;  // number of merges performed (including current iteration). 1 means we are currently in the first iteration.
     private int savedFiles;  // number of files that were saved in the current iteration.
 
-    private int AVAILABLE_BLOCKS = 5000;
+    private int AVAILABLE_BLOCKS = 4;
 
     ExternalMergeSort(Comparator<Integer> cmp, int numFiles, int pairsInBlock, String dir, List<String> inv){
         this.cmp = cmp;
@@ -30,19 +30,47 @@ public class ExternalMergeSort {
     }
 
     public void sort(){
-        // todo: need to handle the case where more than one iteration is needed
-        try {
-            SingleMerge singleMerge = new SingleMerge(1, numFiles);
-            singleMerge.merge();
-        } catch (IOException e){
-            e.printStackTrace();
-            System.exit(1);
+        while (numFiles > 1) {
+            try {
+                Files.createDirectories(Path.of(dir + folderName + (iteration+1)));
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+
+            for (int i = 0; i < Math.ceil((float) numFiles / (AVAILABLE_BLOCKS - 1)); i++) {
+                int end = Math.min(numFiles, (i + 1) * (AVAILABLE_BLOCKS - 1));
+                try {
+                    // TODO: Handle case when start == end?
+                    SingleMerge sm = new SingleMerge(i * (AVAILABLE_BLOCKS - 1) + 1, end);
+                    sm.merge();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+            }
+
+            this.removeDir(dir + folderName + iteration);  // remove the temp dir in which the files of this iteration were stored
+            numFiles = savedFiles;
+            savedFiles = 0;
+            iteration++;
         }
-
-
     }
 
+    private void removeDir(String dir){
+        File dirToRemove = new File(dir);
+        File[] contents = dirToRemove.listFiles();
+        if (contents != null) {
+            for (File file : contents) {
+                file.delete();
+            }
+        }
+        dirToRemove.delete();
+    }
 
+    public String getFinalFile() {
+        return dir + folderName + iteration + "/1";
+    }
 
     /** Holds all the information required for a single iteration of the merge-sort algorithm */
     private class SingleMerge{
@@ -55,16 +83,13 @@ public class ExternalMergeSort {
 
 
         private SingleMerge(int start, int end) throws IOException {
-            // make a new dir for the files of this iteration:
-            Files.createDirectories(Path.of(dir + "/iteration_" + (iteration+1)));
-
             this.numPairsInDeque = ((AVAILABLE_BLOCKS - 1) / (end-start+1)) * pairsInBlock;
-            this.mergedOutput = new ObjectOutputStream(new FileOutputStream(dir + "/iteration_" + (iteration+1) + "/" + (savedFiles+1)));
+            this.mergedOutput = new ObjectOutputStream(new FileOutputStream(dir + folderName + (iteration+1) + "/" + (savedFiles+1)));
             this.fileReaders = new ArrayList<>(end-start+1);
             this.fileDeques = new ArrayList<>(end-start+1);
 
             for (int i=start; i<=end; i++){
-                FileInputStream fileIn = new FileInputStream(dir + "/iteration_" + iteration + "/" + i);
+                FileInputStream fileIn = new FileInputStream(dir + folderName + iteration + "/" + i);
                 this.fileReaders.add(new ObjectInputStream(fileIn));
                 this.fileDeques.add(new ArrayDeque<int[]>(this.numPairsInDeque));
             }
@@ -80,8 +105,7 @@ public class ExternalMergeSort {
             }
             this.saveOutputBlock();  // needed in case the block wasn't full
             mergedOutput.close();
-            // TODO: For some reason, the last few files are not removed
-            this.removeDir(dir + "/iteration_" + iteration);  // remove the temp dir in which the files of this iteration were stored
+            savedFiles++;
         }
 
         private ArrayList<String> getHeads() {
@@ -195,16 +219,7 @@ public class ExternalMergeSort {
             }
         }
 
-        private void removeDir(String dir){
-            File dirToRemove = new File(dir);
-            File[] contents = dirToRemove.listFiles();
-            if (contents != null) {
-                for (File file : contents) {
-                    file.delete();
-                }
-            }
-            dirToRemove.delete();
-        }
+
 
 
     }

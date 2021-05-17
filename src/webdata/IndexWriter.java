@@ -116,9 +116,9 @@ public class IndexWriter {
 			System.out.println("File " + j + " count: " + countNumsInFile(dir + "/iteration_1/" + j));
 		}
 
-		ExternalMergeSort externalMergeSort = new ExternalMergeSort(cmp, tokenFilesNumber, PAIRS_IN_BLOCK, dir, invertedTokenDict);
-		externalMergeSort.sort();
-		System.out.println(isFileSorted(dir + "/iteration_2/1", cmp));
+		ExternalMergeSort ems = new ExternalMergeSort(cmp, tokenFilesNumber, PAIRS_IN_BLOCK, dir, invertedTokenDict);
+		ems.sort();
+		System.out.println(isFileSorted(ems.getFinalFile(), cmp));
 	}
 
 	// TODO: for debugging. Remove this later
