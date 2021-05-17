@@ -75,7 +75,7 @@ public class IndexWriter {
 
 		// todo: remove the directory creation from here!
 		try {
-			Files.createDirectories(Path.of(this.dir + "/iteration_1"));
+			Files.createDirectories(Path.of(this.dir + ExternalMergeSort.folderName + "1"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -116,15 +116,15 @@ public class IndexWriter {
 			System.out.println("File " + j + " count: " + countNumsInFile(dir + "/iteration_1/" + j));
 		}
 
-		ExternalMergeSort ems = new ExternalMergeSort(cmp, tokenFilesNumber, PAIRS_IN_BLOCK, dir, invertedTokenDict);
+		ExternalMergeSort ems = new ExternalMergeSort(cmp, tokenFilesNumber, PAIRS_IN_BLOCK, dir);
 		ems.sort();
-		System.out.println(isFileSorted(ems.getFinalFile(), cmp));
+		System.out.println(isFileSorted(dir + "/1", cmp));
 	}
 
 	// TODO: for debugging. Remove this later
 	private boolean isFileSorted(String fileName, Comparator<Integer> cmp) {
-		FileInputStream fileIn;
-		ObjectInputStream ois;
+		FileInputStream fileIn = null;
+		ObjectInputStream ois = null;
 		long tot = 0;
 		try {
 			fileIn = new FileInputStream(fileName);
@@ -144,6 +144,12 @@ public class IndexWriter {
 			}
 		}  catch (EOFException ex) {
 			System.out.println("Read " + tot + " pairs.");
+			try {
+				ois.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
 			return true;
 		} catch (IOException ex) {
 			ex.printStackTrace();
@@ -153,7 +159,7 @@ public class IndexWriter {
 	}
 	private long countNumsInFile(String fileName) {
 		FileInputStream fileIn;
-		ObjectInputStream ois;
+		ObjectInputStream ois = null;
 		long tot = 0;
 		try {
 			fileIn = new FileInputStream(fileName);
@@ -163,6 +169,12 @@ public class IndexWriter {
 				tot++;
 			}
 		}  catch (EOFException ex) {
+			try {
+				ois.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
 			return tot;
 		} catch (IOException ex) {
 			ex.printStackTrace();
@@ -213,7 +225,7 @@ public class IndexWriter {
 
 	private void saveBuffer() throws IOException {
 		this.tokenFilesNumber++;
-		ObjectOutputStream tokenBufferWriter = new ObjectOutputStream(new FileOutputStream(dir + "/iteration_1/" + tokenFilesNumber));
+		ObjectOutputStream tokenBufferWriter = new ObjectOutputStream(new FileOutputStream(dir + ExternalMergeSort.folderName + "1/" + tokenFilesNumber));
 		for (int i = 0; i < tokenBufferPointer; i++) {
 			tokenBufferWriter.writeInt(tokenBuffer[i][0]);
 			tokenBufferWriter.writeInt(tokenBuffer[i][1]);

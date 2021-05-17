@@ -6,9 +6,8 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class ExternalMergeSort {
-    private List<String> inv;
     private Comparator<Integer> cmp;
-    private String folderName = "/iteration_";
+    public static String folderName = "/iteration_";
     private int numFiles;  // current number of files to merge
     private int pairsInBlock;
     private String dir;
@@ -17,7 +16,7 @@ public class ExternalMergeSort {
 
     private int AVAILABLE_BLOCKS = 4;
 
-    ExternalMergeSort(Comparator<Integer> cmp, int numFiles, int pairsInBlock, String dir, List<String> inv){
+    ExternalMergeSort(Comparator<Integer> cmp, int numFiles, int pairsInBlock, String dir){
         this.cmp = cmp;
         this.numFiles = numFiles;
 //        this.filePrefix = filePrefix;
@@ -25,8 +24,6 @@ public class ExternalMergeSort {
         this.dir = dir;
         this.iteration = 1;
         this.savedFiles = 0;
-
-        this.inv = inv;
     }
 
     public void sort(){
@@ -55,6 +52,9 @@ public class ExternalMergeSort {
             savedFiles = 0;
             iteration++;
         }
+        File sorted = new File(dir + folderName + iteration + "/1");
+        sorted.renameTo(new File(dir + "/1"));
+        removeDir(dir + folderName + iteration);
     }
 
     private void removeDir(String dir){
@@ -66,10 +66,6 @@ public class ExternalMergeSort {
             }
         }
         dirToRemove.delete();
-    }
-
-    public String getFinalFile() {
-        return dir + folderName + iteration + "/1";
     }
 
     /** Holds all the information required for a single iteration of the merge-sort algorithm */
@@ -99,7 +95,7 @@ public class ExternalMergeSort {
             this.clearOutputBlock();
             this.loadAll();
             while (!this.areAllDequesEmpty()){
-                ArrayList<String> heads = getHeads();
+//                ArrayList<String> heads = getHeads();
                 int minIndex = this.getMin();
                 this.extractMin(minIndex);
             }
@@ -108,18 +104,18 @@ public class ExternalMergeSort {
             savedFiles++;
         }
 
-        private ArrayList<String> getHeads() {
-            ArrayList<String> heads = new ArrayList<>();
-            for (int i=0; i<fileDeques.size(); i++){
-                int[] p = fileDeques.get(i).peekFirst();
-                if (p == null) {
-                    heads.add(null);
-                } else {
-                    heads.add(inv.get(p[0]));
-                }
-            }
-            return heads;
-        }
+//        private ArrayList<String> getHeads() {
+//            ArrayList<String> heads = new ArrayList<>();
+//            for (int i=0; i<fileDeques.size(); i++){
+//                int[] p = fileDeques.get(i).peekFirst();
+//                if (p == null) {
+//                    heads.add(null);
+//                } else {
+//                    heads.add(inv.get(p[0]));
+//                }
+//            }
+//            return heads;
+//        }
 
         /** Add the first element in the deque[minIndex] to the output block.
          * If the block is full, save it to the output file and clear the block.
