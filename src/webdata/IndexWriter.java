@@ -34,9 +34,9 @@ public class IndexWriter {
 		this.dir = dir;
 		createDir();
 		createDicts(inputFile);
-//		createProductIndex();
+		createProductIndex();
 		createTokenIndex();
-//		createReviewIndex();
+		createReviewIndex();
 	}
 
 	/**
@@ -98,7 +98,7 @@ public class IndexWriter {
 			DataParser.Review review = dataParser.parseReview(s);
 			addProductId(review.getProductId(), i + 1);
 			int length = addReviewText(review.getText(), i + 1);
-//			addReviewId(review, i, length);
+			addReviewId(review, i, length);
 		}
 		this.saveBuffer();
 
@@ -185,15 +185,14 @@ public class IndexWriter {
 	/**
 	 * Adds all the information that is relevant to the given reviewId to the reviewIds dictionary.
 	 */
-//	private void addReviewId(DataParser.Review review, int reviewId, int length) {
-//		reviewIds.put(reviewId, new ArrayList<>());
-//		// 0 - productId, 1 - score, 2 - helpfulness, 3 - length
-//		for (String field : DataParser.INTEREST_FIELDS) {
-//			if (field.equals("text")) { continue; }
-//			reviewIds.get(reviewId).add(review.get(field));
-//		}
-//		reviewIds.get(reviewId).add(String.valueOf(length));
-//	}
+	private void addReviewId(DataParser.Review review, int reviewId, int length) {
+		reviewIds.put(reviewId, new ArrayList<>());
+		// 0 - productId, 1 - score, 2 - helpfulness, 3 - length
+		reviewIds.get(reviewId).add(review.getProductId());
+		reviewIds.get(reviewId).add(review.getScore());
+		reviewIds.get(reviewId).add(review.getHelpfulness());
+		reviewIds.get(reviewId).add(String.valueOf(length));
+	}
 
 	/**
 	 * Creates and saves to the disk the product index, i.e. all the information that is related to products.
