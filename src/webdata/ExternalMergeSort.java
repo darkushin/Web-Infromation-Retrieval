@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class ExternalMergeSort {
-//    private List<String> invertedTokenDict;
+    private List<String> inv;
     private Comparator<Integer> cmp;
 //    private String filePrefix;
     private int numFiles;  // current number of files to merge
@@ -15,9 +15,9 @@ public class ExternalMergeSort {
     private int iteration;  // number of merges performed (including current iteration). 1 means we are currently in the first iteration.
     private int savedFiles;  // number of files that were saved in the current iteration.
 
-    private int AVAILABLE_BLOCKS = 60000;
+    private int AVAILABLE_BLOCKS = 5000;
 
-    ExternalMergeSort(Comparator<Integer> cmp, int numFiles, int pairsInBlock, String dir){
+    ExternalMergeSort(Comparator<Integer> cmp, int numFiles, int pairsInBlock, String dir, List<String> inv){
         this.cmp = cmp;
         this.numFiles = numFiles;
 //        this.filePrefix = filePrefix;
@@ -25,6 +25,8 @@ public class ExternalMergeSort {
         this.dir = dir;
         this.iteration = 1;
         this.savedFiles = 0;
+
+        this.inv = inv;
     }
 
     public void sort(){
@@ -72,11 +74,27 @@ public class ExternalMergeSort {
             this.clearOutputBlock();
             this.loadAll();
             while (!this.areAllDequesEmpty()){
+                ArrayList<String> heads = getHeads();
                 int minIndex = this.getMin();
                 this.extractMin(minIndex);
             }
             this.saveOutputBlock();  // needed in case the block wasn't full
+            mergedOutput.close();
+            // TODO: For some reason, the last few files are not removed
             this.removeDir(dir + "/iteration_" + iteration);  // remove the temp dir in which the files of this iteration were stored
+        }
+
+        private ArrayList<String> getHeads() {
+            ArrayList<String> heads = new ArrayList<>();
+            for (int i=0; i<fileDeques.size(); i++){
+                int[] p = fileDeques.get(i).peekFirst();
+                if (p == null) {
+                    heads.add(null);
+                } else {
+                    heads.add(inv.get(p[0]));
+                }
+            }
+            return heads;
         }
 
         /** Add the first element in the deque[minIndex] to the output block.
@@ -104,7 +122,7 @@ public class ExternalMergeSort {
                 if (fileDeques.get(i).size() > 0){
                     if (minIndex == -1) {
                         minIndex = i;
-                    } else if (cmp.compare(fileDeques.get(minIndex).peekFirst()[0], fileDeques.get(i).getFirst()[0]) > 0){
+                    } else if (cmp.compare(fileDeques.get(minIndex).getFirst()[0], fileDeques.get(i).getFirst()[0]) > 0){
                         minIndex = i;
                     }
                 }
@@ -119,8 +137,30 @@ public class ExternalMergeSort {
         }
 
         /** Load numbBlocks from the file given by index i to the matching deque*/
-        private void loadData(int i, int numBlocks) throws IOException {
-            for (int j = 0; j<numBlocks * pairsInBlock; j++){
+        private void loadData(int i, int numPairs) throws IOException {
+//            // TODO: Code for reading -blocks- (not pairs). Remove if not used
+//            int blocksRead = 0;
+//            int pairsRead = 0;
+//            while (blocksRead < numBlocks) {
+//                int[] pair = new int[2];
+//                try {
+//                    pair[0] = fileReaders.get(i).readInt();
+//                    pair[1] = fileReaders.get(i).readInt();
+//                } catch (EOFException e){
+//                    // Reached end of file.
+//                    fileReaders.get(i).close();
+//                    fileReaders.set(i, null);
+//                    break;
+//                }
+//                fileDeques.get(i).add(pair);
+//                pairsRead++;
+//                if (pairsRead == pairsInBlock) {
+//                    pairsRead = 0;
+//                    blocksRead++;
+//                }
+//            }
+
+            for (int j = 0; j < numPairs; j++) {
                 int[] pair = new int[2];
                 try {
                     pair[0] = fileReaders.get(i).readInt();
@@ -145,7 +185,7 @@ public class ExternalMergeSort {
         }
 
         private void clearOutputBlock(){
-            outputBlock = new int[pairsInBlock *2];
+            outputBlock = new int[pairsInBlock * 2];
             outputPtr = 0;
         }
 

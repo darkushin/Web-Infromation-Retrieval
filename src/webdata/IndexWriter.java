@@ -22,9 +22,7 @@ public class IndexWriter {
 	private static final String TOKEN_INDEX_FILE = "token_index.txt";
 	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
 	private static final int PAIRS_IN_BLOCK = 1000;
-	private static final int TOKEN_BUFFER_SIZE = 100;
-
-
+	private static final int TOKEN_BUFFER_SIZE = 5000;  // Number of -pairs- in memory. Should be PAIRS_IN_BLOCK * (M-1) or something.
 
 	/**
 	* Given product review data, creates an on disk index
@@ -93,21 +91,86 @@ public class IndexWriter {
 			System.out.println("Error occurred while reading the reviews input file.");
 			System.exit(1);
 		}
-		int i=0;
+		int i=1;
 		for (String s: dataLoader){
 			DataParser.Review review = dataParser.parseReview(s);
-			addProductId(review.getProductId(), i + 1);
-			int length = addReviewText(review.getText(), i + 1);
+			addProductId(review.getProductId(), i);
+			int length = addReviewText(review.getText(), i);
 			addReviewId(review, i, length);
+			i++;
 		}
-		this.saveBuffer();
+		this.sortBuffer();
+		try {
+			this.saveBuffer();
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+
 
 		// todo: merge sort all files - maybe move to a new function
 		Comparator<Integer> cmp = Comparator.comparing(a -> invertedTokenDict.get(a));
-		ExternalMergeSort externalMergeSort = new ExternalMergeSort(cmp, tokenFilesNumber, PAIRS_IN_BLOCK, dir);
-		externalMergeSort.sort();
 
+		for (int j = 1; j <= tokenFilesNumber; j++) {
+			System.out.println("File " + j + " sorted: " + isFileSorted(dir + "/iteration_1/" + j, cmp));
+			System.out.println("File " + j + " count: " + countNumsInFile(dir + "/iteration_1/" + j));
+		}
+
+		ExternalMergeSort externalMergeSort = new ExternalMergeSort(cmp, tokenFilesNumber, PAIRS_IN_BLOCK, dir, invertedTokenDict);
+		externalMergeSort.sort();
+		System.out.println(isFileSorted(dir + "/iteration_2/1", cmp));
 	}
+
+	// TODO: for debugging. Remove this later
+	private boolean isFileSorted(String fileName, Comparator<Integer> cmp) {
+		FileInputStream fileIn;
+		ObjectInputStream ois;
+		long tot = 0;
+		try {
+			fileIn = new FileInputStream(fileName);
+			ois = new ObjectInputStream(fileIn);
+			int prev = ois.readInt();
+			int prevDocId = ois.readInt();
+			tot++;
+			while (true) {
+				int cur = ois.readInt();
+				int docId = ois.readInt();
+				if (cmp.compare(prev, cur) > 0) {
+					System.out.println("Oops! Occured in " + tot);
+				}
+				prev = cur;
+				prevDocId = docId;
+				tot++;
+			}
+		}  catch (EOFException ex) {
+			System.out.println("Read " + tot + " pairs.");
+			return true;
+		} catch (IOException ex) {
+			ex.printStackTrace();
+			System.exit(1);
+		}
+		return true;
+	}
+	private long countNumsInFile(String fileName) {
+		FileInputStream fileIn;
+		ObjectInputStream ois;
+		long tot = 0;
+		try {
+			fileIn = new FileInputStream(fileName);
+			ois = new ObjectInputStream(fileIn);
+			while (true) {
+				ois.readInt();
+				tot++;
+			}
+		}  catch (EOFException ex) {
+			return tot;
+		} catch (IOException ex) {
+			ex.printStackTrace();
+			System.exit(1);
+		}
+		return tot;
+	}
+
 
 	/**
 	 * Split the given text of the i-th review into tokens and add them to the tokens dictionary.
@@ -132,7 +195,12 @@ public class IndexWriter {
 			tokenBufferPointer++;
 			if (tokenBufferPointer == TOKEN_BUFFER_SIZE){
 				this.sortBuffer();
-				this.saveBuffer();
+				try {
+					this.saveBuffer();
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
 				this.clearBuffer();
 			}
 		}
@@ -143,24 +211,14 @@ public class IndexWriter {
 		Arrays.sort(tokenBuffer, Comparator.comparing(a -> invertedTokenDict.get(a[0])));
 	}
 
-	private void saveBuffer() {
-		ObjectOutputStream tokenBufferWriter = null;
+	private void saveBuffer() throws IOException {
 		this.tokenFilesNumber++;
-		try {
-			tokenBufferWriter = new ObjectOutputStream(new FileOutputStream(dir + "/iteration_1/" + tokenFilesNumber));
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
+		ObjectOutputStream tokenBufferWriter = new ObjectOutputStream(new FileOutputStream(dir + "/iteration_1/" + tokenFilesNumber));
 		for (int i = 0; i < tokenBufferPointer; i++) {
-			try {
-				tokenBufferWriter.writeInt(tokenBuffer[i][0]);
-				tokenBufferWriter.writeInt(tokenBuffer[i][1]);
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
+			tokenBufferWriter.writeInt(tokenBuffer[i][0]);
+			tokenBufferWriter.writeInt(tokenBuffer[i][1]);
 		}
+		tokenBufferWriter.close();
 	}
 
 	private void clearBuffer() {
@@ -338,7 +396,7 @@ public class IndexWriter {
 	}
 
 	public static void main(String[] args) {
-		String inputFile = "./100.txt";
+		String inputFile = "./1000.txt";
 		String dir = "./Data_Index";
 		IndexWriter indexWriter = new IndexWriter();
 		indexWriter.write(inputFile, dir);
