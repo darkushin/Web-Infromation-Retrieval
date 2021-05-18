@@ -5,6 +5,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 public class TokensIndex implements Serializable {
@@ -102,6 +103,56 @@ public class TokensIndex implements Serializable {
                 System.exit(1);
             }
             saveInvertedIndex(tokenVal);
+            if (offset == 0){
+                token.stringInfo = tokenData.get(POINTER_INDEX).shortValue();
+            } else {
+                token.stringInfo = tokenData.get(PREFIX_INDEX).shortValue();
+            }
+            offset++;
+            offset = offset % k;
+            this.data.add(token);
+        }
+    }
+
+    public void insertData2(List<List<Integer>> tokensData, String concatString, String pairsFilename) {
+        dictString = concatString;
+        PairsLoader pl = new PairsLoader(pairsFilename);
+        int offset = 0;
+        int[] curPair = pl.readPair(); // This should correspond to the first token
+        for (int i=0; i< tokensData.size(); i++){
+            List<Integer> tokenData = tokensData.get(i);
+            TokenInfo token = new TokenInfo();
+            LinkedList<Integer> invertedIdx = new LinkedList<>();
+
+            invertedIdx.add(curPair[1]);
+            invertedIdx.add(1);
+            token.frequency++;
+            token.collectionFrequency++;
+            int[] nextPair = pl.readPair();
+            while (nextPair != null && nextPair[0] == curPair[0]){
+                if (nextPair[1] == curPair[1]) { // Token repetition inside the same doc
+                    int docFreq = invertedIdx.removeLast();
+                    invertedIdx.add(docFreq + 1);
+                } else {
+                    invertedIdx.add(nextPair[1]);
+                    invertedIdx.add(1);
+                    token.collectionFrequency++;
+                }
+                token.frequency++;
+                curPair = nextPair;
+                nextPair = pl.readPair();
+            }
+            curPair = nextPair; // Save the pair for the next token
+
+            try {
+                token.invertedIndexPtr = (int) this.invertedIndexFile.getFilePointer();
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+            saveInvertedIndex(invertedIdx);
+            numTokens += token.collectionFrequency;
+            token.length = tokenData.get(TOKEN_LENGTH).shortValue();
             if (offset == 0){
                 token.stringInfo = tokenData.get(POINTER_INDEX).shortValue();
             } else {

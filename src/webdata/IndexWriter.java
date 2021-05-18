@@ -33,8 +33,10 @@ public class IndexWriter {
 		createDir();
 		createDicts(inputFile);
 		createProductIndex();
-		createTokenIndex();
 		createReviewIndex();
+		productIds = null;
+		reviewIds = null; // Clears memory?
+		createTokenIndex();
 	}
 
 	/**
@@ -136,7 +138,9 @@ public class IndexWriter {
 				int cur = ois.readInt();
 				int docId = ois.readInt();
 				if (cmp.compare(prev, cur) > 0) {
-					System.out.println("Oops! Occured in " + tot);
+					System.out.println("Terms not sorted. Occured in " + tot);
+				} else if ((cmp.compare(prev, cur) == 0) && (prevDocId > docId)) {
+					System.out.println("DocIds not sorted. Occured in " + tot);
 				}
 				prev = cur;
 				prevDocId = docId;
@@ -220,7 +224,7 @@ public class IndexWriter {
 	}
 
 	private void sortBuffer() {
-		Arrays.sort(tokenBuffer, Comparator.comparing(a -> invertedTokenDict.get(a[0])));
+		Arrays.sort(tokenBuffer,0, tokenBufferPointer, Comparator.comparing(a -> invertedTokenDict.get(a[0])));
 	}
 
 	private void saveBuffer() throws IOException {
@@ -287,19 +291,18 @@ public class IndexWriter {
 	 * The index is created using the k-1-in-k front coding method.
 	 */
 	private void createTokenIndex(){
-		// Convert the current tokenDict of {token:termId} pairs to {token:[docId1,#freq1,docId2,#freq2,...]} format.
-		this.prepareTokenDict();
-		// todo: need to sort the dictionary by keys!
-		LinkedList<String> tokens = new LinkedList<>(tokenDict.keySet());
-		ArrayList<ArrayList<Integer>> vals = new ArrayList<>(tokenDict.values());
-		int k = 8;
+//		// Convert the current tokenDict of {token:termId} pairs to {token:[docId1,#freq1,docId2,#freq2,...]} format.
+//		this.prepareTokenDict();
 
+		LinkedList<String> tokens = new LinkedList<>(tokenDict.keySet());
+		Collections.sort(tokens);
+		ArrayList<ArrayList<Integer>> vals = new ArrayList<>(tokenDict.values()); // TODO: I think we can throw away the termIDs at this point
+		tokenDict = null;
+		int k = 8;
 		KFront kf = new KFront(true);
 		kf.createKFront(k, tokens);
-
 		TokensIndex tIdx = new TokensIndex(k, this.dir);
-		tIdx.insertData(kf.getTable(), vals, kf.getConcatString());
-
+		tIdx.insertData2(kf.getTable(), kf.getConcatString(), dir + "/1");
 		saveToDir(TOKEN_INDEX_FILE, tIdx);
 	}
 

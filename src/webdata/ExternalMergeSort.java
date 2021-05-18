@@ -14,7 +14,7 @@ public class ExternalMergeSort {
     private int iteration;  // number of merges performed (including current iteration). 1 means we are currently in the first iteration.
     private int savedFiles;  // number of files that were saved in the current iteration.
 
-    private int AVAILABLE_BLOCKS = 4;
+    private int AVAILABLE_BLOCKS = 1000;
 
     ExternalMergeSort(Comparator<Integer> cmp, int numFiles, int pairsInBlock, String dir){
         this.cmp = cmp;

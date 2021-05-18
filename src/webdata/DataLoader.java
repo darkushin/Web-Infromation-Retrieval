@@ -48,7 +48,10 @@ public class DataLoader implements Iterable<String> {
             @Override
             public boolean hasNext(){
                 try {
-                    return br.ready();
+                    br.mark(1);
+                    int i = br.read();
+                    br.reset();
+                    return (i != -1);
                 } catch (IOException e) {
                     return false;
                 }
