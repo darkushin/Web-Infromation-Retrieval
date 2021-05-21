@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class IndexWriter {
-	private HashMap<String, ArrayList<Integer>> tokenDict;  // token: tokenId
+	private HashMap<String, Integer> tokenDict;  // token: tokenId
 	private ArrayList<String> invertedTokenDict;  // tokenId: token
 	private TreeMap<String, ArrayList<Integer>> productIds;
 	private TreeMap<Integer, ArrayList<String>> reviewIds;
@@ -203,8 +203,7 @@ public class IndexWriter {
 			}
 			reviewLength += 1;
 			token = token.toLowerCase();
-			ArrayList<Integer> termIdArr = tokenDict.computeIfAbsent(token, k -> new ArrayList<Integer>(Arrays.asList(tokenDict.size())));
-			int termId = termIdArr.get(0);
+			int termId = tokenDict.computeIfAbsent(token, k -> tokenDict.size());
 			if (termId == invertedTokenDict.size()) { invertedTokenDict.add(token);}  // if a new token was added, add it also to the invertedTokenDict
 			tokenBuffer[tokenBufferPointer][0] = termId;
 			tokenBuffer[tokenBufferPointer][1] = reviewIndex;
@@ -291,18 +290,14 @@ public class IndexWriter {
 	 * The index is created using the k-1-in-k front coding method.
 	 */
 	private void createTokenIndex(){
-//		// Convert the current tokenDict of {token:termId} pairs to {token:[docId1,#freq1,docId2,#freq2,...]} format.
-//		this.prepareTokenDict();
-
 		LinkedList<String> tokens = new LinkedList<>(tokenDict.keySet());
 		Collections.sort(tokens);
-		ArrayList<ArrayList<Integer>> vals = new ArrayList<>(tokenDict.values()); // TODO: I think we can throw away the termIDs at this point
 		tokenDict = null;
 		int k = 8;
 		KFront kf = new KFront(true);
 		kf.createKFront(k, tokens);
 		TokensIndex tIdx = new TokensIndex(k, this.dir);
-		tIdx.insertData2(kf.getTable(), kf.getConcatString(), dir + "/1");
+		tIdx.insertData(kf.getTable(), kf.getConcatString(), dir + "/1");
 		saveToDir(TOKEN_INDEX_FILE, tIdx);
 	}
 
@@ -382,7 +377,7 @@ public class IndexWriter {
 				} else {
 					// save the values of the previous token:
 					String token = invertedTokenDict.get(previousTermId);
-					tokenDict.put(token, tokenVals);
+//					tokenDict.put(token, tokenVals);
 
 					// start a new array for the new term:
 					tokenVals = new ArrayList<>(Arrays.asList(docId, 1));
@@ -415,6 +410,9 @@ public class IndexWriter {
 		String dir = "./Data_Index";
 		IndexWriter indexWriter = new IndexWriter();
 		indexWriter.write(inputFile, dir);
+//		Comparator<Integer> cmp = Comparator.comparing(a -> indexWriter.invertedTokenDict.get(a));
+
+//		indexWriter.isFileSorted("./Data_Index/1", cmp);
 		System.out.println("here");
 	}
 }

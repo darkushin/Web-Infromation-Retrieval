@@ -76,10 +76,12 @@ public class DataParser {
         for (int i=1; i<fields.size(); i++){
             String field = fields.get(i);
             List<String> fieldValue = Arrays.asList(field.split(": "));
-            switch (fieldValue.get(0)) {
-                case "text" -> parsedReview.setText(String.join(":", fieldValue.subList(1, fieldValue.size())));
-                case "helpfulness" -> parsedReview.setHelpfulness(fieldValue.get(1));
-                case "score" -> parsedReview.setScore(fieldValue.get(1));
+            if (fieldValue.get(0).equals("text")) {
+                parsedReview.setText(String.join(":", fieldValue.subList(1, fieldValue.size())));
+            } else if (fieldValue.get(0).equals("helpfulness")) {
+                parsedReview.setHelpfulness(fieldValue.get(1));
+            } else if (fieldValue.get(0).equals("score")) {
+                parsedReview.setScore(fieldValue.get(1));
             }
         }
         return parsedReview;
