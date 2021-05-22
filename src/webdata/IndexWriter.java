@@ -110,7 +110,6 @@ public class IndexWriter {
 		}
 
 
-		// todo: merge sort all files - maybe move to a new function
 		Comparator<Integer> cmp = Comparator.comparing(a -> invertedTokenDict.get(a));
 
 		for (int j = 1; j <= tokenFilesNumber; j++) {
@@ -343,76 +342,11 @@ public class IndexWriter {
 		}
 	}
 
-	/**
-	 * Read the termID-docID file, and convert all the appearances to the format of token:[doc1-#appearances, doc2-#appearance]
-	 * this way, the same code as in ex1 can be used to create the token index.
-	 */
-	private void prepareTokenDict(){
-		// todo: change the fileName to be according to the directory!
-		String fileName = this.dir + "/iteration_2/1";
-		FileInputStream fileIn = null;
-		ObjectInputStream termFile = null;
-		try {
-			fileIn = new FileInputStream(fileName);
-			termFile = new ObjectInputStream(fileIn);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		// read all the integers from the file until reaching EOF
-		try{
-			int previousTermId = 0;
-			int previousDocId = 0;
-			ArrayList<Integer> tokenVals = new ArrayList<>();  // odd places-docId, even places-freq in doc.
-			while (true){ // todo: ugly solution, any better idea?
-				int termId = termFile.readInt();
-				int docId = termFile.readInt();
-				if (termId == previousTermId){
-					if (docId == previousDocId){ // token already appeared in the doc - increment the frequency
-						tokenVals.set(tokenVals.size()-1, tokenVals.get(tokenVals.size()-1) + 1);
-					} else { // first appearance of the token in this doc
-						tokenVals.addAll(Arrays.asList(docId, 1));
-						previousDocId = docId;
-					}
-				} else {
-					// save the values of the previous token:
-					String token = invertedTokenDict.get(previousTermId);
-//					tokenDict.put(token, tokenVals);
-
-					// start a new array for the new term:
-					tokenVals = new ArrayList<>(Arrays.asList(docId, 1));
-					previousTermId = termId;
-					previousDocId = docId;
-				}
-			}
-
-		} catch (EOFException e){  // reached EOF and finished converting all tokens.
-			return;
-		} catch (Exception e){
-			e.printStackTrace();
-			System.out.println("Error occurred while converting token dict.");
-			System.exit(1);
-		}
-
-
-		// while we didn't reach EOF, read two integers at a time - termID and docID.
-		// for every such pair, check if the termID is the same as the termID of the previous:
-		// If not - find the token matching to the termID (using invertedTermId dict) and add the list created here to the tokenDict.
-		// If yes - continue to update the list of this token - this list is the same as in ex1: pairs of docId-#appearances, i.e. for every document count the appearances of the token in the doc (can be done easily because they are consecutive in this case)/
-			// For every pair, as the termID is the same, check if the docId matches the previous docId:
-			// If yes - raise the count for this docId
-			// If not - add a new entry for this docId and set its appearances to 1
-
-	}
-
 	public static void main(String[] args) {
-		String inputFile = "./1000.txt";
+		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
 		String dir = "./Data_Index";
 		IndexWriter indexWriter = new IndexWriter();
 		indexWriter.write(inputFile, dir);
-//		Comparator<Integer> cmp = Comparator.comparing(a -> indexWriter.invertedTokenDict.get(a));
-
-//		indexWriter.isFileSorted("./Data_Index/1", cmp);
 		System.out.println("here");
 	}
 }

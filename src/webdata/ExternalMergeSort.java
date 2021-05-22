@@ -19,7 +19,6 @@ public class ExternalMergeSort {
     ExternalMergeSort(Comparator<Integer> cmp, int numFiles, int pairsInBlock, String dir){
         this.cmp = cmp;
         this.numFiles = numFiles;
-//        this.filePrefix = filePrefix;
         this.pairsInBlock = pairsInBlock;
         this.dir = dir;
         this.iteration = 1;
@@ -95,7 +94,6 @@ public class ExternalMergeSort {
             this.clearOutputBlock();
             this.loadAll();
             while (!this.areAllDequesEmpty()){
-//                ArrayList<String> heads = getHeads();
                 int minIndex = this.getMin();
                 this.extractMin(minIndex);
             }
@@ -103,19 +101,6 @@ public class ExternalMergeSort {
             mergedOutput.close();
             savedFiles++;
         }
-
-//        private ArrayList<String> getHeads() {
-//            ArrayList<String> heads = new ArrayList<>();
-//            for (int i=0; i<fileDeques.size(); i++){
-//                int[] p = fileDeques.get(i).peekFirst();
-//                if (p == null) {
-//                    heads.add(null);
-//                } else {
-//                    heads.add(inv.get(p[0]));
-//                }
-//            }
-//            return heads;
-//        }
 
         /** Add the first element in the deque[minIndex] to the output block.
          * If the block is full, save it to the output file and clear the block.

@@ -86,34 +86,5 @@ public class DataParser {
         }
         return parsedReview;
     }
-
-//    public static void main(String[] args) throws IOException {
-//        String inputFile = "./100.txt";
-//        BufferedReader br = new BufferedReader(new FileReader(inputFile));
-//        String line;
-//        StringBuilder review = new StringBuilder();
-//        List<String> data = new ArrayList<>();
-//        boolean stopFlag = false;
-//        int i = 0;
-//        while(!stopFlag && (line = br.readLine()) != null) {
-//            if (line.contains("product/productId")){
-//                if (i > 0) {
-//                    data.add(review.toString());
-//                    stopFlag = true;
-//                }
-//                else {
-//                    review.append(line);
-//                    i++;
-//                }
-//            }
-//            else{
-//                review.append(line);
-//            }
-//        }
-//        DataParser dt = new DataParser();
-//        dt.parseData(data);
-//        List<Review> reviews = dt.getParsedData();
-//        System.out.println("daniel");
-//    }
 }
 
