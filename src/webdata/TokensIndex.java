@@ -49,7 +49,8 @@ public class TokensIndex implements Serializable {
     private int k;
     private String dir;
     private RandomAccessFile invertedIndexFile;
-    private long invertedAll = 0;
+    private long invertedDiff = 0;
+    private long invertedEncode = 0;
     private long invertedSave = 0;
 
     public TokensIndex(int k, String dir) {
@@ -59,14 +60,14 @@ public class TokensIndex implements Serializable {
         this.numTokens = 0;
         this.k = k;
         this.dir = dir;
-        createRandomAccessFile();
+        createOutputFile();
     }
 
     /**
      * Create a new RandomAccessFile to write the tokens inverted index into.
      * If such a file already exists, first remove it.
      */
-    private void createRandomAccessFile(){
+    private void createOutputFile(){
         try {
             File file = new File(this.dir + "/" + TOKEN_INVERTED_INDEX_FILE);
             if (file.exists()){
@@ -84,10 +85,14 @@ public class TokensIndex implements Serializable {
         dictString = concatString;
         PairsLoader pl = new PairsLoader(pairsFilename);
         int offset = 0;
-        long cumAll = 0;
-        long cumSave = 0;
+        long insert = 0;
+        long insertSave = 0;
+        int invertedPtr = 0;
         int[] curPair = pl.readPair(); // This should correspond to the first token
         for (int i=0; i< tokensData.size(); i++){
+            if (i % (tokensData.size()/10) == 0){
+                System.out.println("Finished " + i + " tokens. Time: " + (insert + insertSave));
+            }
             long startTime = new Date().getTime();
             List<Integer> tokenData = tokensData.get(i);
             TokenInfo token = new TokenInfo();
@@ -114,7 +119,7 @@ public class TokensIndex implements Serializable {
             curPair = nextPair; // Save the pair for the next token
 
             long endTime = new Date().getTime();
-            cumAll += (endTime - startTime);
+            insert += (endTime - startTime);
 
             startTime = new Date().getTime();
             try {
@@ -123,9 +128,11 @@ public class TokensIndex implements Serializable {
                 e.printStackTrace();
                 System.exit(1);
             }
-            saveInvertedIndex(invertedIdx);
+//            token.invertedIndexPtr = invertedPtr;
+//            saveInvertedIndex(invertedIdx);
+
             endTime = new Date().getTime();
-            cumSave += (endTime - startTime);
+            insertSave += (endTime - startTime);
 
             numTokens += token.collectionFrequency;
             token.length = tokenData.get(TOKEN_LENGTH).shortValue();
@@ -137,10 +144,15 @@ public class TokensIndex implements Serializable {
             offset++;
             offset = offset % k;
             this.data.add(token);
+
+            token = null;
+            invertedIdx = null;
+            tokenData = null;
         }
-        System.out.println("CumAll: " + cumAll);
-        System.out.println("CumSave: " + cumSave);
-        System.out.println("InvertedAll: " + invertedAll);
+        System.out.println("insert: " + insert);
+        System.out.println("insertSave: " + insertSave);
+        System.out.println("InvertedDiff: " + invertedDiff);
+        System.out.println("InvertedEncode: " + invertedEncode);
         System.out.println("InvertedSave: " + invertedSave);
         this.dictBytes = this.dictString.getBytes(StandardCharsets.UTF_8).length;
     }
@@ -165,7 +177,7 @@ public class TokensIndex implements Serializable {
      * Encodes the integers given in the integer list using delta encoding, and saves them in the invertedIndexFile.
      * @param valsList a list with number that should be encoded and saved in the inverted index file.
      */
-    private void saveInvertedIndex(List<Integer> valsList) {
+    private int saveInvertedIndex(List<Integer> valsList) {
         try {
             // change the reviewIds (odd indices) to a difference list (except for the first id):
             long start = new Date().getTime();
@@ -174,23 +186,29 @@ public class TokensIndex implements Serializable {
                 valsList.set(i, valsList.get(i) - valsList.get(i-2));
             }
             long end = new Date().getTime();
-            invertedAll += (end-start);
+            invertedDiff += (end-start);
+
+            start = new Date().getTime();
             StringBuilder stringCodes = new StringBuilder();
             for (int num : valsList) {
                 String code = Encoding.deltaEncode(num);
                 stringCodes.append(code);
             }
             byte[] codeBytes = Encoding.toByteArray(stringCodes.toString());
-
+//            byte[] codeBytes = new byte[1000];
+            end = new Date().getTime();
+            invertedEncode += (end-start);
             start = new Date().getTime();
-            this.invertedIndexFile.write(codeBytes);
+            this.invertedIndexFile.write(codeBytes, 0, codeBytes.length);
             end = new Date().getTime();
             invertedSave += (end-start);
-        } catch (Exception e){
+            return codeBytes.length;
+        } catch (Exception e) {
             System.out.println("Error occurred while saving invertedIndex bytes");
             e.printStackTrace();
             System.exit(1);
         }
+        return 0;
     }
 
     /**
