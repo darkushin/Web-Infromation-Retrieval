@@ -1,6 +1,7 @@
 package webdata;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,11 +37,13 @@ public class ProductIndex implements Serializable {
 
     private ArrayList<ProductInfo> data;
     private String dictString;
+    private int dictBytes;
     private int k;
 
     public ProductIndex(int k) {
-        data = new ArrayList<>();
-        dictString = null;
+        this.data = new ArrayList<>();
+        this.dictString = null;
+        this.dictBytes = 0;
         this.k = k;
     }
 
@@ -63,6 +66,7 @@ public class ProductIndex implements Serializable {
             offset = offset % k;
             data.add(pf);
         }
+        this.dictBytes = this.dictString.getBytes(StandardCharsets.UTF_8).length;
     }
 
     /**
@@ -122,14 +126,18 @@ public class ProductIndex implements Serializable {
     private void readObject(ObjectInputStream inputFile) throws ClassNotFoundException, IOException
     {
         k = inputFile.readInt();
-        dictString = inputFile.readUTF();
+        dictBytes = inputFile.readInt();
+        dictString = new String(inputFile.readNBytes(dictBytes), StandardCharsets.UTF_8);
+//        dictString = inputFile.readUTF();
         data = (ArrayList<ProductInfo>) inputFile.readObject();
     }
 
     private void writeObject(ObjectOutputStream outputFile) throws IOException
     {
         outputFile.writeInt(k);
-        outputFile.writeUTF(dictString);
+        outputFile.writeInt(this.dictBytes);
+        outputFile.writeBytes(this.dictString);
+//        outputFile.writeUTF(dictString);
         outputFile.writeObject(data);
     }
 
