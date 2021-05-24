@@ -88,8 +88,8 @@ public class IndexWriter {
 			e.printStackTrace();
 		}
 
+		long startTime = new Date().getTime();
 		this.clearBuffer();
-
 		DataLoader dataLoader = null;
 		DataParser dataParser = new DataParser();
 		try {
@@ -117,7 +117,8 @@ public class IndexWriter {
 			e.printStackTrace();
 			System.exit(1);
 		}
-
+		long endTime = new Date().getTime();
+		System.out.println("Reading data & writing files took " + ((endTime - startTime) / 1000) + " Seconds");
 
 		Comparator<Integer> cmp = Comparator.comparing(a -> invertedTokenDict.get(a));
 
