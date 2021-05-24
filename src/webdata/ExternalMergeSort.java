@@ -49,6 +49,7 @@ public class ExternalMergeSort {
             this.removeDir(dir + folderName + iteration);  // remove the temp dir in which the files of this iteration were stored
             numFiles = savedFiles;
             savedFiles = 0;
+            System.out.println("Number of files in iteration: " + iteration + "is: " + numFiles);
             iteration++;
         }
         File sorted = new File(dir + folderName + iteration + "/1");
