@@ -3,6 +3,7 @@ package webdata;
 import java.io.IOException;
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -46,6 +47,7 @@ public class TokensIndex implements Serializable {
 
     public ArrayList<TokenInfo> data;
     private String dictString;
+    private int dictBytes;
     private int numTokens;  // the total number of tokens in the collection, including repetitions
     private int k;
     private String dir;
@@ -54,6 +56,7 @@ public class TokensIndex implements Serializable {
     public TokensIndex(int k, String dir) {
         this.data = new ArrayList<>();
         this.dictString = null;
+        this.dictBytes = 0;
         this.numTokens = 0;
         this.k = k;
         this.dir = dir;
@@ -126,6 +129,7 @@ public class TokensIndex implements Serializable {
             offset = offset % k;
             this.data.add(token);
         }
+        this.dictBytes = this.dictString.getBytes(StandardCharsets.UTF_8).length;
     }
 
     /**
@@ -247,7 +251,8 @@ public class TokensIndex implements Serializable {
 
     private void readObject(ObjectInputStream inputFile) throws IOException, ClassNotFoundException {
         k = inputFile.readInt();
-        dictString = inputFile.readUTF();
+        dictBytes = inputFile.readInt();
+        dictString = new String(inputFile.readNBytes(dictBytes), StandardCharsets.UTF_8);
         numTokens = inputFile.readInt();
         data = (ArrayList<TokenInfo>) inputFile.readObject();
 
@@ -255,7 +260,8 @@ public class TokensIndex implements Serializable {
 
     private void writeObject(ObjectOutputStream outputFile) throws IOException {
         outputFile.writeInt(this.k);
-        outputFile.writeUTF(this.dictString);
+        outputFile.writeInt(this.dictBytes);
+        outputFile.writeBytes(this.dictString);
         outputFile.writeInt(this.numTokens);
         outputFile.writeObject(this.data);
     }

@@ -4,6 +4,8 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.Date;
+
 
 public class IndexWriter {
 	private HashMap<String, Integer> tokenDict;  // token: tokenId
@@ -22,7 +24,11 @@ public class IndexWriter {
 	private static final String TOKEN_INDEX_FILE = "token_index.txt";
 	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
 	private static final int PAIRS_IN_BLOCK = 1000;
-	private static final int TOKEN_BUFFER_SIZE = 5000;  // Number of -pairs- in memory. Should be PAIRS_IN_BLOCK * (M-1) or something.
+	private static final int M = 50000;
+	private static final int TOKEN_BUFFER_SIZE = PAIRS_IN_BLOCK * (M - 1);  // Number of -pairs- in memory. Should be PAIRS_IN_BLOCK * (M-1) or something.
+
+	int NUM_REVIEWS = 100000;  // todo: remove before submission!
+
 
 	/**
 	* Given product review data, creates an on disk index
@@ -100,6 +106,9 @@ public class IndexWriter {
 			int length = addReviewText(review.getText(), i);
 			addReviewId(review, i, length);
 			i++;
+
+			// todo: remove this part - is used only to test with specific number of reviews
+			if (i > NUM_REVIEWS) { break;}
 		}
 		this.sortBuffer();
 		try {
@@ -112,14 +121,14 @@ public class IndexWriter {
 
 		Comparator<Integer> cmp = Comparator.comparing(a -> invertedTokenDict.get(a));
 
-		for (int j = 1; j <= tokenFilesNumber; j++) {
-			System.out.println("File " + j + " sorted: " + isFileSorted(dir + "/iteration_1/" + j, cmp));
-			System.out.println("File " + j + " count: " + countNumsInFile(dir + "/iteration_1/" + j));
-		}
+//		for (int j = 1; j <= tokenFilesNumber; j++) {
+//			System.out.println("File " + j + " sorted: " + isFileSorted(dir + "/iteration_1/" + j, cmp));
+//			System.out.println("File " + j + " count: " + countNumsInFile(dir + "/iteration_1/" + j));
+//		}
 
 		ExternalMergeSort ems = new ExternalMergeSort(cmp, tokenFilesNumber, PAIRS_IN_BLOCK, dir);
 		ems.sort();
-		System.out.println(isFileSorted(dir + "/1", cmp));
+//		System.out.println(isFileSorted(dir + "/1", cmp));
 	}
 
 	// TODO: for debugging. Remove this later
@@ -292,7 +301,7 @@ public class IndexWriter {
 		LinkedList<String> tokens = new LinkedList<>(tokenDict.keySet());
 		Collections.sort(tokens);
 		tokenDict = null;
-		int k = 8;
+		int k = 256;
 		KFront kf = new KFront(true);
 		kf.createKFront(k, tokens);
 		TokensIndex tIdx = new TokensIndex(k, this.dir);
@@ -343,10 +352,14 @@ public class IndexWriter {
 	}
 
 	public static void main(String[] args) {
-		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
+//		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
+		String inputFile = "./1000.txt";
 		String dir = "./Data_Index";
+		long startTime = new Date().getTime();
 		IndexWriter indexWriter = new IndexWriter();
 		indexWriter.write(inputFile, dir);
+		long endTime = new Date().getTime();
+		System.out.println("Indexing Time: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
 		System.out.println("here");
 	}
 }
