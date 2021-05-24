@@ -27,7 +27,7 @@ public class IndexWriter {
 	private static final int M = 100000;
 	private static final int TOKEN_BUFFER_SIZE = PAIRS_IN_BLOCK * (M - 1);  // Number of -pairs- in memory. Should be PAIRS_IN_BLOCK * (M-1) or something.
 
-	int NUM_REVIEWS = 10000;  // todo: remove before submission!
+	int NUM_REVIEWS = 100000;  // todo: remove before submission!
 
 
 	/**
@@ -340,11 +340,7 @@ public class IndexWriter {
 		endTime = new Date().getTime();
 		System.out.println("Token Index Inserting Data: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
 
-		startTime = new Date().getTime();
 		saveToDir(TOKEN_INDEX_FILE, tIdx);
-		endTime = new Date().getTime();
-		System.out.println("Token Index Saving File: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
-
 	}
 
 	/**
