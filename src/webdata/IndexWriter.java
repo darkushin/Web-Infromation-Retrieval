@@ -16,7 +16,7 @@ public class IndexWriter {
 	private int[][] tokenBuffer; // Array of termID, docID pairs. Regular array to sort in-place
 	private int tokenBufferPointer;
 	private int tokenFilesNumber = 0;
-
+// test
 	private String dir;
 
 	private static final String PRODUCT_INDEX_FILE = "product_index.txt";
