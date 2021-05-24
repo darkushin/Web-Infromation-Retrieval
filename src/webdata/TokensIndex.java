@@ -4,10 +4,7 @@ import java.io.IOException;
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class TokensIndex implements Serializable {
     public class TokenInfo implements Serializable{
@@ -52,6 +49,8 @@ public class TokensIndex implements Serializable {
     private int k;
     private String dir;
     private RandomAccessFile invertedIndexFile;
+    private long invertedAll = 0;
+    private long invertedSave = 0;
 
     public TokensIndex(int k, String dir) {
         this.data = new ArrayList<>();
@@ -85,11 +84,14 @@ public class TokensIndex implements Serializable {
         dictString = concatString;
         PairsLoader pl = new PairsLoader(pairsFilename);
         int offset = 0;
+        long cumAll = 0;
+        long cumSave = 0;
         int[] curPair = pl.readPair(); // This should correspond to the first token
         for (int i=0; i< tokensData.size(); i++){
+            long startTime = new Date().getTime();
             List<Integer> tokenData = tokensData.get(i);
             TokenInfo token = new TokenInfo();
-            LinkedList<Integer> invertedIdx = new LinkedList<>();
+            ArrayList<Integer> invertedIdx = new ArrayList<>();
 
             invertedIdx.add(curPair[1]);
             invertedIdx.add(1);
@@ -98,7 +100,7 @@ public class TokensIndex implements Serializable {
             int[] nextPair = pl.readPair();
             while (nextPair != null && nextPair[0] == curPair[0]){
                 if (nextPair[1] == curPair[1]) { // Token repetition inside the same doc
-                    int docFreq = invertedIdx.removeLast();
+                    int docFreq = invertedIdx.remove(invertedIdx.size()-1);
                     invertedIdx.add(docFreq + 1);
                 } else {
                     invertedIdx.add(nextPair[1]);
@@ -111,6 +113,10 @@ public class TokensIndex implements Serializable {
             }
             curPair = nextPair; // Save the pair for the next token
 
+            long endTime = new Date().getTime();
+            cumAll += (endTime - startTime);
+
+            startTime = new Date().getTime();
             try {
                 token.invertedIndexPtr = (int) this.invertedIndexFile.getFilePointer();
             } catch (IOException e) {
@@ -118,6 +124,9 @@ public class TokensIndex implements Serializable {
                 System.exit(1);
             }
             saveInvertedIndex(invertedIdx);
+            endTime = new Date().getTime();
+            cumSave += (endTime - startTime);
+
             numTokens += token.collectionFrequency;
             token.length = tokenData.get(TOKEN_LENGTH).shortValue();
             if (offset == 0){
@@ -129,6 +138,10 @@ public class TokensIndex implements Serializable {
             offset = offset % k;
             this.data.add(token);
         }
+        System.out.println("CumAll: " + cumAll);
+        System.out.println("CumSave: " + cumSave);
+        System.out.println("InvertedAll: " + invertedAll);
+        System.out.println("InvertedSave: " + invertedSave);
         this.dictBytes = this.dictString.getBytes(StandardCharsets.UTF_8).length;
     }
 
@@ -155,17 +168,24 @@ public class TokensIndex implements Serializable {
     private void saveInvertedIndex(List<Integer> valsList) {
         try {
             // change the reviewIds (odd indices) to a difference list (except for the first id):
+            long start = new Date().getTime();
+
             for (int i = valsList.size()-2; i>0; i = i - 2){
                 valsList.set(i, valsList.get(i) - valsList.get(i-2));
             }
-
+            long end = new Date().getTime();
+            invertedAll += (end-start);
             StringBuilder stringCodes = new StringBuilder();
             for (int num : valsList) {
                 String code = Encoding.deltaEncode(num);
                 stringCodes.append(code);
             }
             byte[] codeBytes = Encoding.toByteArray(stringCodes.toString());
+
+            start = new Date().getTime();
             this.invertedIndexFile.write(codeBytes);
+            end = new Date().getTime();
+            invertedSave += (end-start);
         } catch (Exception e){
             System.out.println("Error occurred while saving invertedIndex bytes");
             e.printStackTrace();

@@ -27,7 +27,7 @@ public class IndexWriter {
 	private static final int M = 100000;
 	private static final int TOKEN_BUFFER_SIZE = PAIRS_IN_BLOCK * (M - 1);  // Number of -pairs- in memory. Should be PAIRS_IN_BLOCK * (M-1) or something.
 
-	int NUM_REVIEWS = 1000000;  // todo: remove before submission!
+	int NUM_REVIEWS = 10000;  // todo: remove before submission!
 
 
 	/**
@@ -320,14 +320,31 @@ public class IndexWriter {
 	 */
 	private void createTokenIndex(){
 		LinkedList<String> tokens = new LinkedList<>(tokenDict.keySet());
+		long startTime = new Date().getTime();
 		Collections.sort(tokens);
+		long endTime = new Date().getTime();
+		System.out.println("Token Index After Sort: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
+
 		tokenDict = null;
+		startTime = new Date().getTime();
+
 		int k = 256;
 		KFront kf = new KFront(true);
 		kf.createKFront(k, tokens);
+		endTime = new Date().getTime();
+		System.out.println("Token Index After KFront: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
+
+		startTime = new Date().getTime();
 		TokensIndex tIdx = new TokensIndex(k, this.dir);
 		tIdx.insertData(kf.getTable(), kf.getConcatString(), dir + "/1");
+		endTime = new Date().getTime();
+		System.out.println("Token Index Inserting Data: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
+
+		startTime = new Date().getTime();
 		saveToDir(TOKEN_INDEX_FILE, tIdx);
+		endTime = new Date().getTime();
+		System.out.println("Token Index Saving File: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
+
 	}
 
 	/**
