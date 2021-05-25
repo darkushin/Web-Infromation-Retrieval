@@ -57,7 +57,7 @@ public class DataParser {
 //    }
 
     public List<Review> parseData(List<String> rawReviews){
-        LinkedList<Review> allReviews = new LinkedList<>();
+        ArrayList<Review> allReviews = new ArrayList<>();
         for (String review: rawReviews){
             allReviews.add(parseReview(review));
         }

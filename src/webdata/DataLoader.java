@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,7 +37,7 @@ public class DataLoader implements Iterable<String> {
     }
 
     public List<String> readMultipleReviews(int num) {
-        LinkedList<String> ret = new LinkedList<>();
+        ArrayList<String> ret = new ArrayList<>();
         for (int i = 0; i < num; i++) {
             ret.add(readSingleReview());
         }

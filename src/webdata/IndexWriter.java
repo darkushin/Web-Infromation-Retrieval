@@ -300,7 +300,7 @@ public class IndexWriter {
 	 * Creates and saves to the disk the product index, i.e. all the information that is related to products.
 	 */
 	private void createProductIndex() {
-		LinkedList<String> ids = new LinkedList<>(productIds.keySet());
+		ArrayList<String> ids = new ArrayList<>(productIds.keySet());
 		ArrayList<ArrayList<Integer>> vals = new ArrayList<>(productIds.values());
 		int k = 8;
 		KFront kf = new KFront();
@@ -319,7 +319,7 @@ public class IndexWriter {
 	 * The index is created using the k-1-in-k front coding method.
 	 */
 	private void createTokenIndex(){
-		LinkedList<String> tokens = new LinkedList<>(tokenDict.keySet());
+		ArrayList<String> tokens = new ArrayList<>(tokenDict.keySet());
 		long startTime = new Date().getTime();
 		Collections.sort(tokens);
 		long endTime = new Date().getTime();
@@ -348,7 +348,7 @@ public class IndexWriter {
 	 */
 	private void createReviewIndex() {
 		// Revise the review dictionary to the correct structure & change productIDs to product index
-		LinkedList<List<Integer>> dictValues = new LinkedList<>();
+		ArrayList<List<Integer>> dictValues = new ArrayList<>();
 		HashMap<String, Integer> productDict = new HashMap<>(productIds.size());
 		int i = 0;
 		for (String productId: productIds.keySet()){

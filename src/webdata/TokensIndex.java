@@ -88,16 +88,8 @@ public class TokensIndex implements Serializable {
 
         long insert = 0;
         long insertSave = 0;
-        int invertedPtr = 0;
         int[] curPair = pl.readPair(); // This should correspond to the first token
-        FileOutputStream fis = null;
-        ObjectOutputStream bis = null;
-        try {
-            fis = new FileOutputStream(this.invertedIndexFile.getFD());
-            bis = new ObjectOutputStream(fis);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
         for (int i=0; i< tokensData.size(); i++){
             if (i % (tokensData.size()/10) == 0){
                 System.out.println("Finished " + i + " tokens. Time: " + (insert + insertSave));
@@ -137,13 +129,7 @@ public class TokensIndex implements Serializable {
                 e.printStackTrace();
                 System.exit(1);
             }
-//            token.invertedIndexPtr = invertedPtr;
             saveInvertedIndex(invertedIdx);
-//            try {
-//                bis.writeObject(invertedIdx);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
             endTime = new Date().getTime();
             insertSave += (endTime - startTime);
 
@@ -208,28 +194,20 @@ public class TokensIndex implements Serializable {
                 stringCodes.append(code);
             }
             byte[] codeBytes = Encoding.toByteArray(stringCodes.toString());
-            this.invertedIndexFile.write(codeBytes);
-//            byte[] codeBytes = new byte[1000];
-//            for (int val: valsList){
-//                this.invertedIndexFile.writeInt(val);
-//            }
-//            FileOutputStream fis = new FileOutputStream(this.invertedIndexFile.getFD());
-//            ObjectOutputStream bis = new ObjectOutputStream(fis);
-//            bis.writeObject(valsList);
-
             end = new Date().getTime();
             invertedEncode += (end-start);
-//            start = new Date().getTime();
-//            this.invertedIndexFile.write(codeBytes, 0, codeBytes.length);
-//            end = new Date().getTime();
-//            invertedSave += (end-start);
-//            return codeBytes.length;
+
+            start = new Date().getTime();
+            this.invertedIndexFile.write(codeBytes);
+            end = new Date().getTime();
+            invertedSave += (end-start);
+
+
         } catch (Exception e) {
             System.out.println("Error occurred while saving invertedIndex bytes");
             e.printStackTrace();
             System.exit(1);
         }
-//        return 0;
     }
 
     /**
