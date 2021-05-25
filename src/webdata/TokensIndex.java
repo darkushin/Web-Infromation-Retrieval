@@ -85,6 +85,7 @@ public class TokensIndex implements Serializable {
         dictString = concatString;
         PairsLoader pl = new PairsLoader(pairsFilename);
         int offset = 0;
+
         long insert = 0;
         long insertSave = 0;
         int invertedPtr = 0;
@@ -137,12 +138,12 @@ public class TokensIndex implements Serializable {
                 System.exit(1);
             }
 //            token.invertedIndexPtr = invertedPtr;
-//            saveInvertedIndex(invertedIdx);
-            try {
-                bis.writeObject(invertedIdx);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            saveInvertedIndex(invertedIdx);
+//            try {
+//                bis.writeObject(invertedIdx);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
             endTime = new Date().getTime();
             insertSave += (endTime - startTime);
 
@@ -194,32 +195,30 @@ public class TokensIndex implements Serializable {
             // change the reviewIds (odd indices) to a difference list (except for the first id):
             long start = new Date().getTime();
 
-//            for (int i = valsList.size()-2; i>0; i = i - 2){
-//                valsList.set(i, valsList.get(i) - valsList.get(i-2));
-//            }
-//            long end = new Date().getTime();
-//            invertedDiff += (end-start);
-//
-//            start = new Date().getTime();
-//            StringBuilder stringCodes = new StringBuilder();
-//            for (int num : valsList) {
-//                String code = Encoding.deltaEncode(num);
-//                stringCodes.append(code);
-//            }
-//            byte[] codeBytes = Encoding.toByteArray(stringCodes.toString());
+            for (int i = valsList.size()-2; i>0; i = i - 2){
+                valsList.set(i, valsList.get(i) - valsList.get(i-2));
+            }
+            long end = new Date().getTime();
+            invertedDiff += (end-start);
+
+            start = new Date().getTime();
+            StringBuilder stringCodes = new StringBuilder();
+            for (int num : valsList) {
+                String code = Encoding.deltaEncode(num);
+                stringCodes.append(code);
+            }
+            byte[] codeBytes = Encoding.toByteArray(stringCodes.toString());
+            this.invertedIndexFile.write(codeBytes);
 //            byte[] codeBytes = new byte[1000];
 //            for (int val: valsList){
 //                this.invertedIndexFile.writeInt(val);
 //            }
-            FileOutputStream fis = new FileOutputStream(this.invertedIndexFile.getFD());
-            ObjectOutputStream bis = new ObjectOutputStream(fis);
-            bis.writeObject(valsList);
+//            FileOutputStream fis = new FileOutputStream(this.invertedIndexFile.getFD());
+//            ObjectOutputStream bis = new ObjectOutputStream(fis);
+//            bis.writeObject(valsList);
 
-            long end = new Date().getTime();
+            end = new Date().getTime();
             invertedEncode += (end-start);
-
-
-
 //            start = new Date().getTime();
 //            this.invertedIndexFile.write(codeBytes, 0, codeBytes.length);
 //            end = new Date().getTime();

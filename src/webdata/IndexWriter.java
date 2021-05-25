@@ -52,7 +52,7 @@ public class IndexWriter {
 		reviewIds = null; // Clears memory?
 
 		startTime = new Date().getTime();
-//		createTokenIndex();
+		createTokenIndex();
 		endTime = new Date().getTime();
 		System.out.println("Create Token Index: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
 
@@ -355,7 +355,6 @@ public class IndexWriter {
 			productDict.put(productId, i);
 			i++;
 		}
-		long start = new Date().getTime();
 		for (int review : reviewIds.keySet()) {
 			ArrayList<String> vals = reviewIds.get(review);
 			ArrayList<Integer> new_vals = new ArrayList<>(List.of(0, 0, 0, 0, 0));
@@ -367,19 +366,10 @@ public class IndexWriter {
 			new_vals.set(ReviewIndex.SCORE_INDEX,  (int) Float.parseFloat(vals.get(1)));
 			dictValues.add(new_vals);
 		}
-		long end = new Date().getTime();
-		System.out.println("Reviews data: " + (end-start));
-
-		start = new Date().getTime();
 		ReviewIndex rIndex = new ReviewIndex();
 		rIndex.insertData(dictValues);
-		end = new Date().getTime();
-		System.out.println("Insert data: " + (end - start));
 
-		start = new Date().getTime();
 		saveToDir(REVIEW_INDEX_FILE, rIndex);
-		end = new Date().getTime();
-		System.out.println("Save Data: " + (end-start));
 	}
 
 	/**
