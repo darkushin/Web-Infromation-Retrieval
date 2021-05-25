@@ -13,7 +13,7 @@ public class KFront {
     private boolean saveLength;
 
     public KFront() {
-        table = new LinkedList<>();
+        table = new ArrayList<>();
         concatString = null;
         saveLength = false;
     }
@@ -25,7 +25,7 @@ public class KFront {
     }
 
     public KFront(boolean saveLength) {
-        table = new LinkedList<>();
+        table = new ArrayList<>();
         concatString = null;
         this.saveLength = saveLength;
     }

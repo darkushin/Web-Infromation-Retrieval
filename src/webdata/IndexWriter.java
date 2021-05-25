@@ -27,7 +27,7 @@ public class IndexWriter {
 	private static final int M = 100000;
 	private static final int TOKEN_BUFFER_SIZE = PAIRS_IN_BLOCK * (M - 1);  // Number of -pairs- in memory. Should be PAIRS_IN_BLOCK * (M-1) or something.
 
-	int NUM_REVIEWS = 1000000;  // todo: remove before submission!
+	int NUM_REVIEWS = 100000;  // todo: remove before submission!
 
 
 	/**
@@ -52,7 +52,7 @@ public class IndexWriter {
 		reviewIds = null; // Clears memory?
 
 		startTime = new Date().getTime();
-//		createTokenIndex();
+		createTokenIndex();
 		endTime = new Date().getTime();
 		System.out.println("Create Token Index: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
 
@@ -300,7 +300,7 @@ public class IndexWriter {
 	 * Creates and saves to the disk the product index, i.e. all the information that is related to products.
 	 */
 	private void createProductIndex() {
-		LinkedList<String> ids = new LinkedList<>(productIds.keySet());
+		ArrayList<String> ids = new ArrayList<>(productIds.keySet());
 		ArrayList<ArrayList<Integer>> vals = new ArrayList<>(productIds.values());
 		int k = 8;
 		KFront kf = new KFront();
@@ -319,7 +319,7 @@ public class IndexWriter {
 	 * The index is created using the k-1-in-k front coding method.
 	 */
 	private void createTokenIndex(){
-		LinkedList<String> tokens = new LinkedList<>(tokenDict.keySet());
+		ArrayList<String> tokens = new ArrayList<>(tokenDict.keySet());
 		long startTime = new Date().getTime();
 		Collections.sort(tokens);
 		long endTime = new Date().getTime();
@@ -348,13 +348,17 @@ public class IndexWriter {
 	 */
 	private void createReviewIndex() {
 		// Revise the review dictionary to the correct structure & change productIDs to product index
-		LinkedList<List<Integer>> dictValues = new LinkedList<>();
-		long start = new Date().getTime();
+		ArrayList<List<Integer>> dictValues = new ArrayList<>();
+		HashMap<String, Integer> productDict = new HashMap<>(productIds.size());
+		int i = 0;
+		for (String productId: productIds.keySet()){
+			productDict.put(productId, i);
+			i++;
+		}
 		for (int review : reviewIds.keySet()) {
 			ArrayList<String> vals = reviewIds.get(review);
 			ArrayList<Integer> new_vals = new ArrayList<>(List.of(0, 0, 0, 0, 0));
-			new_vals.set(ReviewIndex.PRODUCTID_INDEX, productIds.headMap(vals.get(0)).size());
-//			new_vals.set(ReviewIndex.PRODUCTID_INDEX, 0);
+			new_vals.set(ReviewIndex.PRODUCTID_INDEX, productDict.get(vals.get(0)));
 			String[] helpf = vals.get(2).split("/");
 			new_vals.set(ReviewIndex.HELPFNUM_INDEX, Integer.parseInt(helpf[0]));
 			new_vals.set(ReviewIndex.HELPFDNOM_INDEX, Integer.parseInt(helpf[1]));
@@ -362,19 +366,10 @@ public class IndexWriter {
 			new_vals.set(ReviewIndex.SCORE_INDEX,  (int) Float.parseFloat(vals.get(1)));
 			dictValues.add(new_vals);
 		}
-		long end = new Date().getTime();
-		System.out.println("Reviews data: " + (end-start));
-
-		start = new Date().getTime();
 		ReviewIndex rIndex = new ReviewIndex();
 		rIndex.insertData(dictValues);
-		end = new Date().getTime();
-		System.out.println("Insert data: " + (end - start));
 
-		start = new Date().getTime();
 		saveToDir(REVIEW_INDEX_FILE, rIndex);
-		end = new Date().getTime();
-		System.out.println("Save Data: " + (end-start));
 	}
 
 	/**

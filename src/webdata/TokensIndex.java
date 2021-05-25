@@ -85,18 +85,11 @@ public class TokensIndex implements Serializable {
         dictString = concatString;
         PairsLoader pl = new PairsLoader(pairsFilename);
         int offset = 0;
+
         long insert = 0;
         long insertSave = 0;
-        int invertedPtr = 0;
         int[] curPair = pl.readPair(); // This should correspond to the first token
-        FileOutputStream fis = null;
-        ObjectOutputStream bis = null;
-        try {
-            fis = new FileOutputStream(this.invertedIndexFile.getFD());
-            bis = new ObjectOutputStream(fis);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
         for (int i=0; i< tokensData.size(); i++){
             if (i % (tokensData.size()/10) == 0){
                 System.out.println("Finished " + i + " tokens. Time: " + (insert + insertSave));
@@ -136,13 +129,7 @@ public class TokensIndex implements Serializable {
                 e.printStackTrace();
                 System.exit(1);
             }
-//            token.invertedIndexPtr = invertedPtr;
-//            saveInvertedIndex(invertedIdx);
-            try {
-                bis.writeObject(invertedIdx);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            saveInvertedIndex(invertedIdx);
             endTime = new Date().getTime();
             insertSave += (endTime - startTime);
 
@@ -194,43 +181,39 @@ public class TokensIndex implements Serializable {
             // change the reviewIds (odd indices) to a difference list (except for the first id):
             long start = new Date().getTime();
 
-//            for (int i = valsList.size()-2; i>0; i = i - 2){
-//                valsList.set(i, valsList.get(i) - valsList.get(i-2));
-//            }
-//            long end = new Date().getTime();
-//            invertedDiff += (end-start);
-//
-//            start = new Date().getTime();
+            for (int i = valsList.size()-2; i>0; i = i - 2){
+                valsList.set(i, valsList.get(i) - valsList.get(i-2));
+            }
+            long end = new Date().getTime();
+            invertedDiff += (end-start);
+
+            start = new Date().getTime();
 //            StringBuilder stringCodes = new StringBuilder();
 //            for (int num : valsList) {
 //                String code = Encoding.deltaEncode(num);
 //                stringCodes.append(code);
 //            }
 //            byte[] codeBytes = Encoding.toByteArray(stringCodes.toString());
-//            byte[] codeBytes = new byte[1000];
-//            for (int val: valsList){
-//                this.invertedIndexFile.writeInt(val);
-//            }
-            FileOutputStream fis = new FileOutputStream(this.invertedIndexFile.getFD());
-            ObjectOutputStream bis = new ObjectOutputStream(fis);
-            bis.writeObject(valsList);
-
-            long end = new Date().getTime();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            DataOutputStream dos = new DataOutputStream(baos);
+            for (int num : valsList) {
+                dos.writeInt(num);
+            }
+            byte[] codeBytes = baos.toByteArray();
+            end = new Date().getTime();
             invertedEncode += (end-start);
 
+            start = new Date().getTime();
+            this.invertedIndexFile.write(codeBytes);
+            end = new Date().getTime();
+            invertedSave += (end-start);
 
 
-//            start = new Date().getTime();
-//            this.invertedIndexFile.write(codeBytes, 0, codeBytes.length);
-//            end = new Date().getTime();
-//            invertedSave += (end-start);
-//            return codeBytes.length;
         } catch (Exception e) {
             System.out.println("Error occurred while saving invertedIndex bytes");
             e.printStackTrace();
             System.exit(1);
         }
-//        return 0;
     }
 
     /**
