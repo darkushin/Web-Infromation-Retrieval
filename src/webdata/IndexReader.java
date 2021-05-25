@@ -1,7 +1,10 @@
 package webdata;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 
@@ -164,9 +167,13 @@ public class IndexReader {
 			e.printStackTrace();
 			System.exit(1);
 		}
-		ArrayList<Integer> vals = new ArrayList<Integer>(Encoding.deltaDecode(dest).subList(0, numReviews));
-		Encoding.diffToIds(vals);
 
+		ArrayList<Integer> vals = new ArrayList<>();
+		for (int i = 0; i < dest.length; i = i +4){
+			byte[] numBytes = Arrays.copyOfRange(dest, i, i+4);
+			vals.add(ByteBuffer.wrap(numBytes).getInt());
+		}
+		Encoding.diffToIds(vals);
 		return Collections.enumeration(vals);
 	}
 
@@ -203,4 +210,9 @@ public class IndexReader {
 		}
 		return Collections.enumeration(reviews);
 	}
+
+//	public static void main(String[] args) {
+//		IndexReader indexReader = new IndexReader("./Data_index");
+//		indexReader.getReviewsWithToken("0");
+//	}
 }
