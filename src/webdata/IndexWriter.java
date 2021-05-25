@@ -27,7 +27,7 @@ public class IndexWriter {
 	private static final int M = 100000;
 	private static final int TOKEN_BUFFER_SIZE = PAIRS_IN_BLOCK * (M - 1);  // Number of -pairs- in memory. Should be PAIRS_IN_BLOCK * (M-1) or something.
 
-	int NUM_REVIEWS = 1000000;  // todo: remove before submission!
+	int NUM_REVIEWS = 100000;  // todo: remove before submission!
 
 
 	/**
@@ -349,12 +349,17 @@ public class IndexWriter {
 	private void createReviewIndex() {
 		// Revise the review dictionary to the correct structure & change productIDs to product index
 		LinkedList<List<Integer>> dictValues = new LinkedList<>();
+		HashMap<String, Integer> productDict = new HashMap<>(productIds.size());
+		int i = 0;
+		for (String productId: productIds.keySet()){
+			productDict.put(productId, i);
+			i++;
+		}
 		long start = new Date().getTime();
 		for (int review : reviewIds.keySet()) {
 			ArrayList<String> vals = reviewIds.get(review);
 			ArrayList<Integer> new_vals = new ArrayList<>(List.of(0, 0, 0, 0, 0));
-			new_vals.set(ReviewIndex.PRODUCTID_INDEX, productIds.headMap(vals.get(0)).size());
-//			new_vals.set(ReviewIndex.PRODUCTID_INDEX, 0);
+			new_vals.set(ReviewIndex.PRODUCTID_INDEX, productDict.get(vals.get(0)));
 			String[] helpf = vals.get(2).split("/");
 			new_vals.set(ReviewIndex.HELPFNUM_INDEX, Integer.parseInt(helpf[0]));
 			new_vals.set(ReviewIndex.HELPFDNOM_INDEX, Integer.parseInt(helpf[1]));
