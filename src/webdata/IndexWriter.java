@@ -14,6 +14,7 @@ public class IndexWriter {
 	private TreeMap<Integer, ArrayList<String>> reviewIds;
 
 	private int[][] tokenBuffer = new int[TOKEN_BUFFER_SIZE][2];
+//	private ArrayList<ArrayList<Integer>> tokenBuffer = new ArrayList<ArrayList<Integer>>();
 	; // Array of termID, docID pairs. Regular array to sort in-place
 	private int tokenBufferPointer;
 	private int tokenFilesNumber = 0;
@@ -24,10 +25,10 @@ public class IndexWriter {
 	private static final String TOKEN_INDEX_FILE = "token_index.txt";
 	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
 	private static final int PAIRS_IN_BLOCK = 1000;
-	private static final int M = 100000;
+	private static final int M = 25000;
 	private static final int TOKEN_BUFFER_SIZE = PAIRS_IN_BLOCK * (M - 1);  // Number of -pairs- in memory. Should be PAIRS_IN_BLOCK * (M-1) or something.
 
-	int NUM_REVIEWS = 100000;  // todo: remove before submission!
+	int NUM_REVIEWS = 10000000;  // todo: remove before submission!
 
 
 	/**
@@ -114,16 +115,22 @@ public class IndexWriter {
 		}
 		long startTime = new Date().getTime();
 		int i=1;
+		int readTokens = 0;
 		for (String s: dataLoader){
 			DataParser.Review review = dataParser.parseReview(s);
 			addProductId(review.getProductId(), i);
 			int length = addReviewText(review.getText(), i);
 			addReviewId(review, i, length);
+			readTokens += length;
 			i++;
 
 			// todo: remove this part - is used only to test with specific number of reviews
 			if (i > NUM_REVIEWS) { break;}
+			if (i % 100000 == 0) {
+				System.out.println("Read " + i + " reviews and " + readTokens + " tokens");
+			}
 		}
+		System.out.println("Done Reading");
 
 		this.sortBuffer();
 		try {
@@ -238,7 +245,9 @@ public class IndexWriter {
 			tokenBuffer[tokenBufferPointer][0] = termId;
 			tokenBuffer[tokenBufferPointer][1] = reviewIndex;
 			tokenBufferPointer++;
+//			tokenBuffer.add(new ArrayList<>(Arrays.asList(termId, reviewIndex)));
 			if (tokenBufferPointer == TOKEN_BUFFER_SIZE){
+//			if (tokenBuffer.size() == TOKEN_BUFFER_SIZE){
 				this.sortBuffer();
 				try {
 					this.saveBuffer();
@@ -247,13 +256,17 @@ public class IndexWriter {
 					System.exit(1);
 				}
 				this.clearBuffer();
+//				this.tokenBuffer.clear();
+
 			}
 		}
 		return reviewLength;
 	}
 
 	private void sortBuffer() {
+		System.out.println("In sort");
 		Arrays.sort(tokenBuffer,0, tokenBufferPointer, Comparator.comparing(a -> invertedTokenDict.get(a[0])));
+//		tokenBuffer.sort(Comparator.comparing(a -> invertedTokenDict.get(a.get(0))));
 	}
 
 	private void saveBuffer() throws IOException {
@@ -263,6 +276,10 @@ public class IndexWriter {
 			tokenBufferWriter.writeInt(tokenBuffer[i][0]);
 			tokenBufferWriter.writeInt(tokenBuffer[i][1]);
 		}
+//		for (int i = 0; i < tokenBuffer.size(); i++) {
+//			tokenBufferWriter.writeInt(tokenBuffer.get(i).get(0));
+//			tokenBufferWriter.writeInt(tokenBuffer.get(i).get(1));
+//		}
 		tokenBufferWriter.close();
 	}
 

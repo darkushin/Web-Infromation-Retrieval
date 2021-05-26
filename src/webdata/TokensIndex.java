@@ -9,29 +9,29 @@ import java.util.*;
 public class TokensIndex implements Serializable {
     public class TokenInfo implements Serializable{
         private int stringInfo; // This is either a pointer to the concatenated string, or a prefix size.
-        private short frequency;
-        private short collectionFrequency;
+        private int frequency;
+        private int collectionFrequency;
         private short length;
-        private int invertedIndexPtr;
+        private long invertedIndexPtr;
 
-        public short getFrequency(){ return frequency;}
-        public short getCollectionFrequency(){ return collectionFrequency;}
-        public int getInvertedIdxPtr(){ return invertedIndexPtr;}
+        public int getFrequency(){ return frequency;}
+        public int getCollectionFrequency(){ return collectionFrequency;}
+        public long getInvertedIdxPtr(){ return invertedIndexPtr;}
 
         private void readObject(ObjectInputStream inputFile) throws IOException, ClassNotFoundException {
             stringInfo = inputFile.readInt();
-            frequency = inputFile.readShort();
-            collectionFrequency = inputFile.readShort();
+            frequency = inputFile.readInt();
+            collectionFrequency = inputFile.readInt();
             length = inputFile.readShort();
-            invertedIndexPtr = inputFile.readInt();
+            invertedIndexPtr = inputFile.readLong();
         }
 
         private void writeObject(ObjectOutputStream outputFile) throws IOException {
             outputFile.writeInt(stringInfo);
-            outputFile.writeShort(frequency);
-            outputFile.writeShort(collectionFrequency);
+            outputFile.writeInt(frequency);
+            outputFile.writeInt(collectionFrequency);
             outputFile.writeShort(length);
-            outputFile.writeInt(invertedIndexPtr);
+            outputFile.writeLong(invertedIndexPtr);
         }
     }
 

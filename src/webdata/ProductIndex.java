@@ -9,20 +9,20 @@ import java.util.List;
 public class ProductIndex implements Serializable {
 
     private class ProductInfo  implements Serializable{
-        private short stringInfo; // This is either a pointer to the concatenated string, or a prefix size.
+        private int stringInfo; // This is either a pointer to the concatenated string, or a prefix size.
         private int reviewId;
         private short spanLength;
 
         private void readObject(ObjectInputStream inputFile) throws ClassNotFoundException, IOException
         {
-            stringInfo = inputFile.readShort();
+            stringInfo = inputFile.readInt();
             reviewId = inputFile.readInt();
             spanLength = inputFile.readShort();
         }
 
         private void writeObject(ObjectOutputStream outputFile) throws IOException
         {
-            outputFile.writeShort(stringInfo);
+            outputFile.writeInt(stringInfo);
             outputFile.writeInt(reviewId);
             outputFile.writeShort(spanLength);
         }
@@ -58,9 +58,9 @@ public class ProductIndex implements Serializable {
             pf.reviewId = entry.get(REVIEWID_INDEX);
             pf.spanLength = entry.get(SPANLENGTH_INDEX).shortValue();
             if (offset == 0) {
-                pf.stringInfo = entry.get(POINTER_INDEX).shortValue();
+                pf.stringInfo = entry.get(POINTER_INDEX);
             } else {
-                pf.stringInfo = entry.get(PREFIXL_INDEX).shortValue();
+                pf.stringInfo = entry.get(PREFIXL_INDEX);
             }
             offset++;
             offset = offset % k;

@@ -147,10 +147,10 @@ public class IndexReader {
 		if (currentTokenIdx == -1){
 			return enumerator;
 		}
-		int tokenInvertedIdxPtr = tokenIndex.get(currentTokenIdx).getInvertedIdxPtr();
+		long tokenInvertedIdxPtr = tokenIndex.get(currentTokenIdx).getInvertedIdxPtr();
 		int numReviews = tokenIndex.get(currentTokenIdx).getFrequency() * 2;
 		byte[] dest = null;
-		int nextInvertedIdxPtr;
+		long nextInvertedIdxPtr;
 		try {
 			RandomAccessFile file = new RandomAccessFile(this.dir + "/" + TOKEN_INVERTED_INDEX_FILE, "r");
 			if (currentTokenIdx + 1 <tokenIndex.get().size()) {
@@ -158,7 +158,7 @@ public class IndexReader {
 			} else {
 				nextInvertedIdxPtr = (int) file.length();
 			}
-			int bytesToRead = nextInvertedIdxPtr - tokenInvertedIdxPtr;
+			int bytesToRead = (int) (nextInvertedIdxPtr - tokenInvertedIdxPtr);
 			dest  = new byte[bytesToRead];
 			file.seek(tokenInvertedIdxPtr);
 			file.read(dest);
