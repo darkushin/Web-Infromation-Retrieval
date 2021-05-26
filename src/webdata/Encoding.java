@@ -206,7 +206,7 @@ public class Encoding {
 
     /**
      * Convert the given list of id-1, num-appearances-1, id-2, num-appearances-2... where the ids are given by their
-     * differences to a list where every id entry are the full id number.
+     * differences to a list where every id entry is the full id number.
      */
     public static List<Integer> diffToIds(List<Integer> vals){
         for (int i = 2; i < vals.size() - 1; i = i + 2){

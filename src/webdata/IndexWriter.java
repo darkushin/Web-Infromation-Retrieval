@@ -392,8 +392,8 @@ public class IndexWriter {
 	}
 
 	public static void main(String[] args) {
-		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
-//		String inputFile = "./1000.txt";
+//		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
+		String inputFile = "./1000.txt";
 		String dir = "./Data_Index";
 		long startTime = new Date().getTime();
 		IndexWriter indexWriter = new IndexWriter();
