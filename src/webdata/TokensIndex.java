@@ -8,7 +8,7 @@ import java.util.*;
 
 public class TokensIndex implements Serializable {
     public class TokenInfo implements Serializable{
-        private short stringInfo; // This is either a pointer to the concatenated string, or a prefix size.
+        private int stringInfo; // This is either a pointer to the concatenated string, or a prefix size.
         private short frequency;
         private short collectionFrequency;
         private short length;
@@ -19,7 +19,7 @@ public class TokensIndex implements Serializable {
         public int getInvertedIdxPtr(){ return invertedIndexPtr;}
 
         private void readObject(ObjectInputStream inputFile) throws IOException, ClassNotFoundException {
-            stringInfo = inputFile.readShort();
+            stringInfo = inputFile.readInt();
             frequency = inputFile.readShort();
             collectionFrequency = inputFile.readShort();
             length = inputFile.readShort();
@@ -27,7 +27,7 @@ public class TokensIndex implements Serializable {
         }
 
         private void writeObject(ObjectOutputStream outputFile) throws IOException {
-            outputFile.writeShort(stringInfo);
+            outputFile.writeInt(stringInfo);
             outputFile.writeShort(frequency);
             outputFile.writeShort(collectionFrequency);
             outputFile.writeShort(length);
@@ -136,9 +136,9 @@ public class TokensIndex implements Serializable {
             numTokens += token.collectionFrequency;
             token.length = tokenData.get(TOKEN_LENGTH).shortValue();
             if (offset == 0){
-                token.stringInfo = tokenData.get(POINTER_INDEX).shortValue();
+                token.stringInfo = tokenData.get(POINTER_INDEX);
             } else {
-                token.stringInfo = tokenData.get(PREFIX_INDEX).shortValue();
+                token.stringInfo = tokenData.get(PREFIX_INDEX);
             }
             offset++;
             offset = offset % k;
