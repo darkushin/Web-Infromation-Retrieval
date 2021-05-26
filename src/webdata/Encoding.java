@@ -1,6 +1,7 @@
 package webdata;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -13,18 +14,21 @@ public class Encoding {
      * Encode the given number using gamma encoding.
      * The encoded output is a string representing the bytes of the number.
      */
-    public static String gammaEncode(int num) {
+    public static void gammaEncode(int num, StringBuilder s) {
         String offset = Integer.toBinaryString(num + 1);
-        return "1".repeat(offset.length() - 1) + "0" + offset.substring(1);
+        s.append("1".repeat(offset.length() - 1));
+        s.append("0");
+        s.append(offset.substring(1));
     }
 
     /**
      * Encode the given number using delta encoding.
      * The encoded output is a string representing the bytes of the number.
      */
-    public static String deltaEncode(int num) {
+    public static void deltaEncode(int num, StringBuilder s) {
         String offset = Integer.toBinaryString(num + 1);
-        return gammaEncode(offset.length() - 1) + offset.substring(1);
+        gammaEncode(offset.length() - 1, s);
+        s.append(offset.substring(1));
     }
 
     /**
@@ -79,13 +83,17 @@ public class Encoding {
      */
     public static byte[] toByteArray(String encoding) {
         // Pad 0s to the nearest multiple of 8
-        String padded = encoding + "0".repeat((int) Math.ceil((float) encoding.length() / 8) * 8 - encoding.length());
+        StringBuilder s = new StringBuilder();
+        s.append(encoding);
+        s.append("0".repeat((int) Math.ceil((float) encoding.length() / 8) * 8 - encoding.length()));
+        String padded = s.toString();
         byte[] ret = new BigInteger(padded, 2).toByteArray();
-        if (ret.length * 8 == padded.length() + 8) {
-            return Arrays.copyOfRange(ret, 1, ret.length);
-        } else {
-            return ret;
-        }
+//        if (ret.length * 8 == padded.length() + 8) {
+//            return Arrays.copyOfRange(ret, 1, ret.length);
+//        } else {
+//            return ret;
+//        }
+        return new byte[5];
     }
 
     /**
@@ -113,7 +121,7 @@ public class Encoding {
             byte[] numAsBytes =  ByteBuffer.allocate(4).putInt(nums[i]).array();
             byte numLength = -1;
             for (int j = 0; j < numAsBytes.length; j++) {
-                if (numAsBytes[j] != 0) {
+                if (numAsBytes[j] != 0 || numLength >= 0) {
                     out.write(numAsBytes[j]);
                     numLength++;
                 } else if (j == numAsBytes.length - 1 & numLength == -1) {
@@ -126,6 +134,30 @@ public class Encoding {
         byte[] output = out.toByteArray();
         output[0] = length;
         return output;
+    }
+
+    public static byte[] groupVarEncodeMultiple(List<Integer> nums) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int i;
+        for (i=0; i + 3 < nums.size(); i=i+4) {
+            try {
+                baos.write(groupVarintEncode(new int[]{nums.get(i), nums.get(i + 1), nums.get(i + 2), nums.get(i + 3)}));
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+        int[] remainder = new int[4];
+        for (int j=0;j < nums.size() - i; j++) {
+            remainder[j] = nums.get(i+j);
+        }
+        try {
+            baos.write(groupVarintEncode(remainder));
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+        return baos.toByteArray();
     }
 
     /**
@@ -145,6 +177,31 @@ public class Encoding {
             output[i] = new BigInteger(1, o).intValue();
         }
         return output;
+    }
+
+    public static ArrayList<Integer> groupVarDecodeMultiple(byte[] encoding) {
+        ArrayList<Integer> ret = new ArrayList<>();
+        int bytesRead = 0;
+        while (bytesRead < encoding.length) {
+            byte lengths = encoding[bytesRead];
+            bytesRead++;
+            for (int i = 0; i < 4; i++) {
+                int bytesToRead = 1 + (lengths >> (2 * (3 - i))) & 3;
+                byte[] o = new byte[bytesToRead];
+                for (int b = 0; b < bytesToRead; b++) {
+                    o[b] = encoding[bytesRead + b];
+                }
+                bytesRead += bytesToRead;
+                ret.add(new BigInteger(1, o).intValue());
+            }
+        }
+        for (int j=0; j < 4; j++) {
+            if (ret.get(ret.size() - 1) != 0) {
+                break;
+            }
+            ret.remove(ret.size() - 1);
+        }
+        return ret;
     }
 
     /**

@@ -188,18 +188,14 @@ public class TokensIndex implements Serializable {
             invertedDiff += (end-start);
 
             start = new Date().getTime();
-//            StringBuilder stringCodes = new StringBuilder();
-//            for (int num : valsList) {
-//                String code = Encoding.deltaEncode(num);
-//                stringCodes.append(code);
+            byte[] codeBytes = Encoding.groupVarEncodeMultiple(valsList);
+//            byte[] codeBytes = new byte[10];
+//            ArrayList<Integer> tst = Encoding.groupVarDecodeMultiple(codeBytes);
+//            for (int j=0;j<tst.size();j++){
+//                if (!valsList.get(j).equals(tst.get(j))) {
+//                    System.out.println(j + " (val: " + valsList.get(j) + " -> ");
+//                }
 //            }
-//            byte[] codeBytes = Encoding.toByteArray(stringCodes.toString());
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            DataOutputStream dos = new DataOutputStream(baos);
-            for (int num : valsList) {
-                dos.writeInt(num);
-            }
-            byte[] codeBytes = baos.toByteArray();
             end = new Date().getTime();
             invertedEncode += (end-start);
 

@@ -164,7 +164,7 @@ public class IndexReader {
 			e.printStackTrace();
 			System.exit(1);
 		}
-		ArrayList<Integer> vals = new ArrayList<Integer>(Encoding.deltaDecode(dest).subList(0, numReviews));
+		ArrayList<Integer> vals = Encoding.groupVarDecodeMultiple(dest);
 		Encoding.diffToIds(vals);
 
 		return Collections.enumeration(vals);
