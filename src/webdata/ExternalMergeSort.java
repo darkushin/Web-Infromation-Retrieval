@@ -49,7 +49,7 @@ public class ExternalMergeSort {
             this.removeDir(dir + folderName + iteration);  // remove the temp dir in which the files of this iteration were stored
             numFiles = savedFiles;
             savedFiles = 0;
-            System.out.println("Number of files in iteration: " + iteration + "is: " + numFiles);
+            System.out.println("Number of files in iteration: " + iteration + " is: " + numFiles);
             iteration++;
         }
         File sorted = new File(dir + folderName + iteration + "/1");
@@ -77,6 +77,12 @@ public class ExternalMergeSort {
         private int outputPtr;
         private ObjectOutputStream mergedOutput;
 
+        // todo: remove these:
+        private int extractMinPolling;
+        private int extractMinSave;
+        private int extractMinClear;
+        private int extractMinLoad;
+
 
         private SingleMerge(int start, int end) throws IOException {
             this.numPairsInDeque = ((AVAILABLE_BLOCKS - 1) / (end-start+1)) * pairsInBlock;
@@ -89,15 +95,41 @@ public class ExternalMergeSort {
                 this.fileReaders.add(new ObjectInputStream(fileIn));
                 this.fileDeques.add(new ArrayDeque<int[]>(this.numPairsInDeque));
             }
+
+            // todo: remove these
+            this.extractMinPolling = 0;
+            this.extractMinSave = 0;
+            this.extractMinClear = 0;
+            this.extractMinLoad = 0;
+
         }
 
         private void merge() throws IOException {
             this.clearOutputBlock();
+            long start = new Date().getTime();
             this.loadAll();
+            long end = new Date().getTime();
+            System.out.println("SingleMerge-loadAll: " + (end-start));
+            int getMin = 0;
+            int extractMin = 0;
             while (!this.areAllDequesEmpty()){
+                start = new Date().getTime();
                 int minIndex = this.getMin();
+                end = new Date().getTime();
+                getMin += (end - start);
+
+                start = new Date().getTime();
                 this.extractMin(minIndex);
+                end = new Date().getTime();
+                extractMin += (end - start);
             }
+            System.out.println("SingleMerge getMin: " + getMin);
+            System.out.println("SingleMerge extractMin: " + extractMin);
+            System.out.println("SingleMerge extractMinPolling: " + this.extractMinPolling);
+            System.out.println("SingleMerge extractMinSave: " + this.extractMinSave);
+            System.out.println("SingleMerge extractMinClear: " + this.extractMinClear);
+            System.out.println("SingleMerge extractMinLoad: " + this.extractMinLoad);
+
             this.saveOutputBlock();  // needed in case the block wasn't full
             mergedOutput.close();
             savedFiles++;
@@ -108,16 +140,31 @@ public class ExternalMergeSort {
          * If the deque is empty, load the next elements in the file given in minIndex.
          */
         private void extractMin(int minIndex) throws IOException {
+            long start = new Date().getTime();
             int[] minPair = fileDeques.get(minIndex).pollFirst();
+            long end = new Date().getTime();
+            this.extractMinPolling += (end-start);
+
             this.outputBlock[this.outputPtr] = minPair[0];
             this.outputBlock[this.outputPtr + 1] = minPair[1];
             this.outputPtr += 2;
             if (this.outputPtr == pairsInBlock * 2){
+                start = new Date().getTime();
                 this.saveOutputBlock();
+                end = new Date().getTime();
+                this.extractMinSave += (end-start);
+                start = new Date().getTime();
                 this.clearOutputBlock();
+                end = new Date().getTime();
+                this.extractMinClear += (end-start);
+
             }
             if (fileDeques.get(minIndex).isEmpty() && fileReaders.get(minIndex) != null){
+                start = new Date().getTime();
                 this.loadData(minIndex, numPairsInDeque);
+                end = new Date().getTime();
+                this.extractMinLoad += (end-start);
+
             }
         }
 

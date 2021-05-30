@@ -26,9 +26,10 @@ public class IndexWriter {
 	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
 	private static final int PAIRS_IN_BLOCK = 1000;
 	private static final int M = 25000;
+//	private static final int M = 25;
 	private static final int TOKEN_BUFFER_SIZE = PAIRS_IN_BLOCK * (M - 1);  // Number of -pairs- in memory. Should be PAIRS_IN_BLOCK * (M-1) or something.
 
-	int NUM_REVIEWS = 10000000;  // todo: remove before submission!
+	int NUM_REVIEWS = 1000000;  // todo: remove before submission!
 
 
 	/**
@@ -56,6 +57,7 @@ public class IndexWriter {
 		createTokenIndex();
 		endTime = new Date().getTime();
 		System.out.println("Create Token Index: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
+		// TODO: remove the merged file that was created (./Data_Index/1)
 
 	}
 
@@ -409,14 +411,13 @@ public class IndexWriter {
 	}
 
 	public static void main(String[] args) {
-//		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
-		String inputFile = "./1000.txt";
+		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
+//		String inputFile = "./1000.txt";
 		String dir = "./Data_Index";
 		long startTime = new Date().getTime();
 		IndexWriter indexWriter = new IndexWriter();
 		indexWriter.write(inputFile, dir);
 		long endTime = new Date().getTime();
 		System.out.println("Indexing Time: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
-		System.out.println("here");
 	}
 }
