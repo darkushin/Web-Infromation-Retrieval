@@ -58,6 +58,8 @@ public class IndexWriter {
 		endTime = new Date().getTime();
 		System.out.println("Create Token Index: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
 		// TODO: remove the merged file that was created (./Data_Index/1)
+		File mergedDataFile = new File(dir + "/1");
+		mergedDataFile.delete();
 
 	}
 
@@ -411,8 +413,8 @@ public class IndexWriter {
 	}
 
 	public static void main(String[] args) {
-		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
-//		String inputFile = "./1000.txt";
+//		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
+		String inputFile = "./1000.txt";
 		String dir = "./Data_Index";
 		long startTime = new Date().getTime();
 		IndexWriter indexWriter = new IndexWriter();
