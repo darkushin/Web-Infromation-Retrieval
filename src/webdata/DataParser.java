@@ -77,7 +77,7 @@ public class DataParser {
             String field = fields.get(i);
             List<String> fieldValue = Arrays.asList(field.split(": "));
             if (fieldValue.get(0).equals("text")) {
-                parsedReview.setText(String.join(":", fieldValue.subList(1, fieldValue.size())));
+                parsedReview.setText(String.join(": ", fieldValue.subList(1, fieldValue.size())));
             } else if (fieldValue.get(0).equals("helpfulness")) {
                 parsedReview.setHelpfulness(fieldValue.get(1));
             } else if (fieldValue.get(0).equals("score")) {

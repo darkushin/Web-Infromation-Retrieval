@@ -29,7 +29,7 @@ public class IndexWriter {
 //	private static final int M = 25;
 	private static final int TOKEN_BUFFER_SIZE = PAIRS_IN_BLOCK * (M - 1);  // Number of -pairs- in memory. Should be PAIRS_IN_BLOCK * (M-1) or something.
 
-	int NUM_REVIEWS = 1000000;  // todo: remove before submission!
+	int NUM_REVIEWS = 10000000;  // todo: remove before submission!
 
 
 	/**
@@ -39,6 +39,7 @@ public class IndexWriter {
 	public void write(String inputFile, String dir) {
 		this.dir = dir;
 		createDir();
+		testParser(inputFile);
 		createDicts(inputFile);
 		long startTime = new Date().getTime();
 		createProductIndex();
@@ -57,11 +58,38 @@ public class IndexWriter {
 		createTokenIndex();
 		endTime = new Date().getTime();
 		System.out.println("Create Token Index: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
-		// TODO: remove the merged file that was created (./Data_Index/1)
 		File mergedDataFile = new File(dir + "/1");
 		mergedDataFile.delete();
 
 	}
+
+	public void testParser(String inputFile){
+		DataLoader dataLoader = null;
+		DataParser dataParser = new DataParser();
+		try {
+			dataLoader = new DataLoader(inputFile);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.out.println("Error occurred while reading the reviews input file.");
+			System.exit(1);
+		}
+		int i=1;
+		int readTokens = 0;
+		for (String s: dataLoader) {
+			DataParser.Review review = dataParser.parseReview(s);
+			int length = addReviewText(review.getText(), i);
+			readTokens += length;
+			i++;
+			if (i > NUM_REVIEWS) { break;}
+			if (i % 100000 == 0) {
+				System.out.println("Read " + i + " reviews and " + readTokens + " tokens");
+			}
+		}
+		System.out.println("TOTAL: " + i + " reviews and " + readTokens + " tokens");
+		System.out.println("Done Reading");
+
+	}
+
 
 	/**
 	 * Delete all index files by removing the given directory
@@ -150,18 +178,12 @@ public class IndexWriter {
 		this.tokenBuffer = null;  // free the token buffer space
 		Comparator<Integer> cmp = Comparator.comparing(a -> invertedTokenDict.get(a));
 
-//		for (int j = 1; j <= tokenFilesNumber; j++) {
-//			System.out.println("File " + j + " sorted: " + isFileSorted(dir + "/iteration_1/" + j, cmp));
-//			System.out.println("File " + j + " count: " + countNumsInFile(dir + "/iteration_1/" + j));
-//		}
 		startTime = new Date().getTime();
 		ExternalMergeSort ems = new ExternalMergeSort(cmp, tokenFilesNumber, PAIRS_IN_BLOCK, dir);
 		System.out.println("Number of files before merging: " + tokenFilesNumber);
 		ems.sort();
 		endTime = new Date().getTime();
 		System.out.println("Merging Time: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
-
-//		System.out.println(isFileSorted(dir + "/1", cmp));
 	}
 
 	// TODO: for debugging. Remove this later
@@ -413,8 +435,8 @@ public class IndexWriter {
 	}
 
 	public static void main(String[] args) {
-//		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
-		String inputFile = "./1000.txt";
+		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
+//		String inputFile = "./1000.txt";
 		String dir = "./Data_Index";
 		long startTime = new Date().getTime();
 		IndexWriter indexWriter = new IndexWriter();
