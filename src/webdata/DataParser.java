@@ -69,7 +69,7 @@ public class DataParser {
      * given review, i.e. productId, score, helpfulness and text.
      */
     public Review parseReview(String review){
-        List<String> fields = Arrays.asList(review.split("review/"));
+        ArrayList<String> fields = new ArrayList<>(Arrays.asList(review.split("review/")));
         Review parsedReview = new Review();
 
         parsedReview.setProductId(fields.get(0).split(": ")[1].split("product/")[0]);
@@ -84,6 +84,35 @@ public class DataParser {
                 parsedReview.setScore(fieldValue.get(1));
             }
         }
+        return parsedReview;
+    }
+
+    public Review parseReview(ArrayList<String> review){
+        Review parsedReview = new Review();
+        StringBuilder text = new StringBuilder();
+        boolean readingText = false;
+        for (String line : review){
+            if (readingText) {
+                text.append(line);
+                continue;
+            }
+            int prefix = line.indexOf("/");
+            int delim = line.indexOf(":");
+            if (prefix == -1 || delim == -1 || delim < prefix) {
+                continue;
+            }
+            String field = line.substring(prefix + 1, delim);
+            switch (field) {
+                case "text" -> {
+                    text.append(line.substring(delim + 2));
+                    readingText = true;
+                }
+                case "productId" -> parsedReview.setProductId(line.substring(delim + 2));
+                case "helpfulness" -> parsedReview.setHelpfulness(line.substring(delim + 2));
+                case "score" -> parsedReview.setScore(line.substring(delim + 2));
+            }
+        }
+        parsedReview.setText(text.toString());
         return parsedReview;
     }
 }

@@ -56,20 +56,20 @@ public class TextCreator {
     }
 
 
-    private void saveText(String inputFile) {
-        DataLoader dataLoader = null;
-        DataParser dataParser = new DataParser();
-        try {
-            dataLoader = new DataLoader(inputFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.out.println("Error occurred while reading the reviews input file.");
-            System.exit(1);
-        }
-        for (String s : dataLoader) {
-            DataParser.Review review = dataParser.parseReview(s);
-        }
-    }
+//    private void saveText(String inputFile) {
+//        DataLoader dataLoader = null;
+//        DataParser dataParser = new DataParser();
+//        try {
+//            dataLoader = new DataLoader(inputFile);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            System.out.println("Error occurred while reading the reviews input file.");
+//            System.exit(1);
+//        }
+//        for (String s : dataLoader) {
+//            DataParser.Review review = dataParser.parseReview(s);
+//        }
+//    }
 
     private void createDir(){
         Path path = Path.of(this.dir);

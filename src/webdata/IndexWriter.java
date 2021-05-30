@@ -11,7 +11,7 @@ public class IndexWriter {
 	private HashMap<String, Integer> tokenDict;  // token: tokenId
 	private ArrayList<String> invertedTokenDict;  // tokenId: token
 	private TreeMap<String, ArrayList<Integer>> productIds;
-	private TreeMap<Integer, ArrayList<String>> reviewIds;
+	private LinkedList<ArrayList<String>> reviewIds;
 
 	private int[][] tokenBuffer = new int[TOKEN_BUFFER_SIZE][2];
 //	private ArrayList<ArrayList<Integer>> tokenBuffer = new ArrayList<ArrayList<Integer>>();
@@ -39,7 +39,7 @@ public class IndexWriter {
 	public void write(String inputFile, String dir) {
 		this.dir = dir;
 		createDir();
-		testParser(inputFile);
+//		testParser(inputFile);
 		createDicts(inputFile);
 		long startTime = new Date().getTime();
 		createProductIndex();
@@ -58,37 +58,38 @@ public class IndexWriter {
 		createTokenIndex();
 		endTime = new Date().getTime();
 		System.out.println("Create Token Index: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
+		// TODO: remove the merged file that was created (./Data_Index/1)
 		File mergedDataFile = new File(dir + "/1");
 		mergedDataFile.delete();
 
 	}
 
-	public void testParser(String inputFile){
-		DataLoader dataLoader = null;
-		DataParser dataParser = new DataParser();
-		try {
-			dataLoader = new DataLoader(inputFile);
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.out.println("Error occurred while reading the reviews input file.");
-			System.exit(1);
-		}
-		int i=1;
-		int readTokens = 0;
-		for (String s: dataLoader) {
-			DataParser.Review review = dataParser.parseReview(s);
-			int length = addReviewText(review.getText(), i);
-			readTokens += length;
-			i++;
-			if (i > NUM_REVIEWS) { break;}
-			if (i % 100000 == 0) {
-				System.out.println("Read " + i + " reviews and " + readTokens + " tokens");
-			}
-		}
-		System.out.println("TOTAL: " + i + " reviews and " + readTokens + " tokens");
-		System.out.println("Done Reading");
-
-	}
+//	public void testParser(String inputFile){
+//		DataLoader dataLoader = null;
+//		DataParser dataParser = new DataParser();
+//		try {
+//			dataLoader = new DataLoader(inputFile);
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//			System.out.println("Error occurred while reading the reviews input file.");
+//			System.exit(1);
+//		}
+//		int i=1;
+//		int readTokens = 0;
+//		for (String s: dataLoader) {
+//			DataParser.Review review = dataParser.parseReview(s);
+//			int length = addReviewText(review.getText(), i);
+//			readTokens += length;
+//			i++;
+//			if (i > NUM_REVIEWS) { break;}
+//			if (i % 100000 == 0) {
+//				System.out.println("Read " + i + " reviews and " + readTokens + " tokens");
+//			}
+//		}
+//		System.out.println("TOTAL: " + i + " reviews and " + readTokens + " tokens");
+//		System.out.println("Done Reading");
+//
+//	}
 
 
 	/**
@@ -124,7 +125,7 @@ public class IndexWriter {
 	private void createDicts(String inputFile){
 		productIds = new TreeMap<>();
 		tokenDict = new HashMap<>();
-		reviewIds = new TreeMap<>();
+		reviewIds = new LinkedList<>();
 		invertedTokenDict = new ArrayList<>();
 
 		// todo: remove the directory creation from here!
@@ -148,7 +149,7 @@ public class IndexWriter {
 		long startTime = new Date().getTime();
 		int i=1;
 		int readTokens = 0;
-		for (String s: dataLoader){
+		for (ArrayList<String> s: dataLoader){
 			DataParser.Review review = dataParser.parseReview(s);
 			addProductId(review.getProductId(), i);
 			int length = addReviewText(review.getText(), i);
@@ -178,12 +179,18 @@ public class IndexWriter {
 		this.tokenBuffer = null;  // free the token buffer space
 		Comparator<Integer> cmp = Comparator.comparing(a -> invertedTokenDict.get(a));
 
+//		for (int j = 1; j <= tokenFilesNumber; j++) {
+//			System.out.println("File " + j + " sorted: " + isFileSorted(dir + "/iteration_1/" + j, cmp));
+//			System.out.println("File " + j + " count: " + countNumsInFile(dir + "/iteration_1/" + j));
+//		}
 		startTime = new Date().getTime();
 		ExternalMergeSort ems = new ExternalMergeSort(cmp, tokenFilesNumber, PAIRS_IN_BLOCK, dir);
 		System.out.println("Number of files before merging: " + tokenFilesNumber);
 		ems.sort();
 		endTime = new Date().getTime();
 		System.out.println("Merging Time: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
+
+//		System.out.println(isFileSorted(dir + "/1", cmp));
 	}
 
 	// TODO: for debugging. Remove this later
@@ -331,12 +338,15 @@ public class IndexWriter {
 	 * Adds all the information that is relevant to the given reviewId to the reviewIds dictionary.
 	 */
 	private void addReviewId(DataParser.Review review, int reviewId, int length) {
-		reviewIds.put(reviewId, new ArrayList<>());
+		ArrayList<String> vals = new ArrayList<>();
+
 		// 0 - productId, 1 - score, 2 - helpfulness, 3 - length
-		reviewIds.get(reviewId).add(review.getProductId());
-		reviewIds.get(reviewId).add(review.getScore());
-		reviewIds.get(reviewId).add(review.getHelpfulness());
-		reviewIds.get(reviewId).add(String.valueOf(length));
+		vals.add(review.getProductId());
+		vals.add(review.getScore());
+		vals.add(review.getHelpfulness());
+		vals.add(String.valueOf(length));
+
+		reviewIds.add(vals);
 	}
 
 	/**
@@ -398,8 +408,7 @@ public class IndexWriter {
 			productDict.put(productId, i);
 			i++;
 		}
-		for (int review : reviewIds.keySet()) {
-			ArrayList<String> vals = reviewIds.get(review);
+		for (ArrayList<String> vals : reviewIds) {
 			ArrayList<Integer> new_vals = new ArrayList<>(List.of(0, 0, 0, 0, 0));
 			new_vals.set(ReviewIndex.PRODUCTID_INDEX, productDict.get(vals.get(0)));
 			String[] helpf = vals.get(2).split("/");
@@ -435,8 +444,8 @@ public class IndexWriter {
 	}
 
 	public static void main(String[] args) {
-		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
-//		String inputFile = "./1000.txt";
+//		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
+		String inputFile = "./1M.txt";
 		String dir = "./Data_Index";
 		long startTime = new Date().getTime();
 		IndexWriter indexWriter = new IndexWriter();

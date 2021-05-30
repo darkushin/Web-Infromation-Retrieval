@@ -6,45 +6,44 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 
-public class DataLoader implements Iterable<String> {
+public class DataLoader implements Iterable<ArrayList<String>> {
     private BufferedReader br;
-    private StringBuilder stringBuffer;
+    private ArrayList<String> reviewStrings;
 
     public DataLoader(String inputFile) throws FileNotFoundException {
         br = new BufferedReader(new FileReader(inputFile));
-        stringBuffer = new StringBuilder();
+        reviewStrings = new ArrayList<>();
     }
 
-    public String readSingleReview() {
+    public ArrayList<String> readSingleReview() {
         String line;
         try {
             while((line = br.readLine()) != null) {
-                if (line.contains("product/productId") && stringBuffer.length() != 0) {
-                    String ret = stringBuffer.toString();
-                    stringBuffer = new StringBuilder(line);
+                if (line.contains("product/productId") && reviewStrings.size() != 0) {
+                    ArrayList<String> ret = reviewStrings;
+                    reviewStrings = new ArrayList<String>();
+                    reviewStrings.add(line);
                     return ret;
                 }
-                stringBuffer.append(line);
+                reviewStrings.add(line);
             }
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
         }
-        return stringBuffer.toString();
+        return reviewStrings;
     }
 
-    public List<String> readMultipleReviews(int num) {
-        ArrayList<String> ret = new ArrayList<>();
-        for (int i = 0; i < num; i++) {
-            ret.add(readSingleReview());
-        }
-        return ret;
-    }
+//    public List<String> readMultipleReviews(int num) {
+//        ArrayList<String> ret = new ArrayList<>();
+//        for (int i = 0; i < num; i++) {
+//            ret.add(readSingleReview());
+//        }
+//        return ret;
+//    }
 
-    public Iterator<String> iterator() {
+    public Iterator<ArrayList<String>> iterator() {
         return new Iterator<>() {
             @Override
             public boolean hasNext(){
@@ -59,7 +58,7 @@ public class DataLoader implements Iterable<String> {
             }
 
             @Override
-            public String next() {
+            public ArrayList<String> next() {
                 return readSingleReview();
             }
 
