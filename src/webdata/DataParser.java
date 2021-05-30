@@ -92,7 +92,8 @@ public class DataParser {
         StringBuilder text = new StringBuilder();
         boolean readingText = false;
         for (String line : review){
-            if (readingText) {
+            if (readingText && !line.equals("")) {
+                text.append(" ");
                 text.append(line);
                 continue;
             }
