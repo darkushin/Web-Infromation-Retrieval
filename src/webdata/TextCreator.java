@@ -6,6 +6,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,20 +32,24 @@ public class TextCreator {
         String line;
         int lineNum = 0;
         int numAppear = 0;
+        long start = new Date().getTime();
         try {
             while((line = br.readLine()) != null) {
                 lineNum++;
                 if (line.contains("review/text")) {
-                    line = line.toLowerCase(Locale.ROOT);
-                    if (line.contains("labeled")){
-                        String[] tokens = line.split("[^a-zA-Z0-9]");
+//                    line = line.toLowerCase(Locale.ROOT);
+//                    if (line.contains("labeled")){
+                    String[] tokens = line.split("[^a-zA-Z0-9]");
 //                        System.out.println(line);
-                        for (String token: tokens){
-                            if (token.equals("labeled")){
-                                numAppear++;
-                            }
-                        }
-                    }
+                    String[] removedNull = Arrays.stream(tokens).filter(value -> value != null && value.length() > 0).toArray(size -> new String[size]);
+//                    for (String token: tokens){
+//                        if (!token.matches("[a-zA-Z0-9]+")){
+//                            continue;
+//                        }
+                    numAppear += removedNull.length;
+//                    }
+//                    }
+
                 }
                 if (lineNum % 10000000 == 0){
                     System.out.println("Read: " + lineNum + " lines");
@@ -53,6 +59,8 @@ public class TextCreator {
             e.printStackTrace();
         }
         System.out.println("Num Appearances = " + numAppear);
+        long end = new Date().getTime();
+        System.out.println("Time: " + (end-start));
     }
 
 
