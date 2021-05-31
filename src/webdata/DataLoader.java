@@ -35,14 +35,6 @@ public class DataLoader implements Iterable<ArrayList<String>> {
         return reviewStrings;
     }
 
-//    public List<String> readMultipleReviews(int num) {
-//        ArrayList<String> ret = new ArrayList<>();
-//        for (int i = 0; i < num; i++) {
-//            ret.add(readSingleReview());
-//        }
-//        return ret;
-//    }
-
     public Iterator<ArrayList<String>> iterator() {
         return new Iterator<>() {
             @Override

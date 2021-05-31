@@ -14,7 +14,7 @@ public class ExternalMergeSort {
     private int iteration;  // number of merges performed (including current iteration). 1 means we are currently in the first iteration.
     private int savedFiles;  // number of files that were saved in the current iteration.
 
-    private int AVAILABLE_BLOCKS = 50000;
+    private int AVAILABLE_BLOCKS = 20000;
 
     ExternalMergeSort(Comparator<Integer> cmp, int numFiles, int pairsInBlock, String dir){
         this.cmp = cmp;
@@ -49,7 +49,6 @@ public class ExternalMergeSort {
             this.removeDir(dir + folderName + iteration);  // remove the temp dir in which the files of this iteration were stored
             numFiles = savedFiles;
             savedFiles = 0;
-            System.out.println("Number of files in iteration: " + iteration + " is: " + numFiles);
             iteration++;
         }
         File sorted = new File(dir + folderName + iteration + "/1");
@@ -77,13 +76,6 @@ public class ExternalMergeSort {
         private int outputPtr;
         private ObjectOutputStream mergedOutput;
 
-        // todo: remove these:
-        private int extractMinPolling;
-        private int extractMinSave;
-        private int extractMinClear;
-        private int extractMinLoad;
-
-
         private SingleMerge(int start, int end) throws IOException {
             this.numPairsInDeque = ((AVAILABLE_BLOCKS - 1) / (end-start+1)) * pairsInBlock;
             this.mergedOutput = new ObjectOutputStream(new FileOutputStream(dir + folderName + (iteration+1) + "/" + (savedFiles+1)));
@@ -95,41 +87,15 @@ public class ExternalMergeSort {
                 this.fileReaders.add(new ObjectInputStream(fileIn));
                 this.fileDeques.add(new ArrayDeque<int[]>(this.numPairsInDeque));
             }
-
-            // todo: remove these
-            this.extractMinPolling = 0;
-            this.extractMinSave = 0;
-            this.extractMinClear = 0;
-            this.extractMinLoad = 0;
-
         }
 
         private void merge() throws IOException {
             this.clearOutputBlock();
-            long start = new Date().getTime();
             this.loadAll();
-            long end = new Date().getTime();
-            System.out.println("SingleMerge-loadAll: " + (end-start));
-            int getMin = 0;
-            int extractMin = 0;
             while (!this.areAllDequesEmpty()){
-                start = new Date().getTime();
                 int minIndex = this.getMin();
-                end = new Date().getTime();
-                getMin += (end - start);
-
-                start = new Date().getTime();
                 this.extractMin(minIndex);
-                end = new Date().getTime();
-                extractMin += (end - start);
             }
-            System.out.println("SingleMerge getMin: " + getMin);
-            System.out.println("SingleMerge extractMin: " + extractMin);
-            System.out.println("SingleMerge extractMinPolling: " + this.extractMinPolling);
-            System.out.println("SingleMerge extractMinSave: " + this.extractMinSave);
-            System.out.println("SingleMerge extractMinClear: " + this.extractMinClear);
-            System.out.println("SingleMerge extractMinLoad: " + this.extractMinLoad);
-
             this.saveOutputBlock();  // needed in case the block wasn't full
             mergedOutput.close();
             savedFiles++;
@@ -140,31 +106,16 @@ public class ExternalMergeSort {
          * If the deque is empty, load the next elements in the file given in minIndex.
          */
         private void extractMin(int minIndex) throws IOException {
-            long start = new Date().getTime();
             int[] minPair = fileDeques.get(minIndex).pollFirst();
-            long end = new Date().getTime();
-            this.extractMinPolling += (end-start);
-
             this.outputBlock[this.outputPtr] = minPair[0];
             this.outputBlock[this.outputPtr + 1] = minPair[1];
             this.outputPtr += 2;
             if (this.outputPtr == pairsInBlock * 2){
-                start = new Date().getTime();
                 this.saveOutputBlock();
-                end = new Date().getTime();
-                this.extractMinSave += (end-start);
-                start = new Date().getTime();
                 this.clearOutputBlock();
-                end = new Date().getTime();
-                this.extractMinClear += (end-start);
-
             }
             if (fileDeques.get(minIndex).isEmpty() && fileReaders.get(minIndex) != null){
-                start = new Date().getTime();
                 this.loadData(minIndex, numPairsInDeque);
-                end = new Date().getTime();
-                this.extractMinLoad += (end-start);
-
             }
         }
 
@@ -191,28 +142,6 @@ public class ExternalMergeSort {
 
         /** Load numbBlocks from the file given by index i to the matching deque*/
         private void loadData(int i, int numPairs) throws IOException {
-//            // TODO: Code for reading -blocks- (not pairs). Remove if not used
-//            int blocksRead = 0;
-//            int pairsRead = 0;
-//            while (blocksRead < numBlocks) {
-//                int[] pair = new int[2];
-//                try {
-//                    pair[0] = fileReaders.get(i).readInt();
-//                    pair[1] = fileReaders.get(i).readInt();
-//                } catch (EOFException e){
-//                    // Reached end of file.
-//                    fileReaders.get(i).close();
-//                    fileReaders.set(i, null);
-//                    break;
-//                }
-//                fileDeques.get(i).add(pair);
-//                pairsRead++;
-//                if (pairsRead == pairsInBlock) {
-//                    pairsRead = 0;
-//                    blocksRead++;
-//                }
-//            }
-
             for (int j = 0; j < numPairs; j++) {
                 int[] pair = new int[2];
                 try {
@@ -247,11 +176,5 @@ public class ExternalMergeSort {
                 this.mergedOutput.writeInt(this.outputBlock[i]);
             }
         }
-
-
-
-
     }
-
-
 }

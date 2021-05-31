@@ -49,9 +49,6 @@ public class TokensIndex implements Serializable {
     private int k;
     private String dir;
     private RandomAccessFile invertedIndexFile;
-    private long invertedDiff = 0;
-    private long invertedEncode = 0;
-    private long invertedSave = 0;
 
     public TokensIndex(int k, String dir) {
         this.data = new ArrayList<>();
@@ -86,15 +83,9 @@ public class TokensIndex implements Serializable {
         PairsLoader pl = new PairsLoader(pairsFilename);
         int offset = 0;
 
-        long insert = 0;
-        long insertSave = 0;
         int[] curPair = pl.readPair(); // This should correspond to the first token
 
         for (int i=0; i< tokensData.size(); i++){
-            if (i % (tokensData.size()/10) == 0){
-                System.out.println("Finished " + i + " tokens. Time: " + (insert + insertSave));
-            }
-            long startTime = new Date().getTime();
             List<Integer> tokenData = tokensData.get(i);
             TokenInfo token = new TokenInfo();
             ArrayList<Integer> invertedIdx = new ArrayList<>();
@@ -119,10 +110,6 @@ public class TokensIndex implements Serializable {
             }
             curPair = nextPair; // Save the pair for the next token
 
-            long endTime = new Date().getTime();
-            insert += (endTime - startTime);
-
-            startTime = new Date().getTime();
             try {
                 token.invertedIndexPtr = (int) this.invertedIndexFile.getFilePointer();
             } catch (IOException e) {
@@ -130,8 +117,6 @@ public class TokensIndex implements Serializable {
                 System.exit(1);
             }
             saveInvertedIndex(invertedIdx);
-            endTime = new Date().getTime();
-            insertSave += (endTime - startTime);
 
             numTokens += token.collectionFrequency;
             token.length = tokenData.get(TOKEN_LENGTH).shortValue();
@@ -148,11 +133,6 @@ public class TokensIndex implements Serializable {
             invertedIdx = null;
             tokenData = null;
         }
-        System.out.println("insert: " + insert);
-        System.out.println("insertSave: " + insertSave);
-        System.out.println("InvertedDiff: " + invertedDiff);
-        System.out.println("InvertedEncode: " + invertedEncode);
-        System.out.println("InvertedSave: " + invertedSave);
         this.dictBytes = this.dictString.getBytes(StandardCharsets.UTF_8).length;
     }
 
@@ -179,32 +159,11 @@ public class TokensIndex implements Serializable {
     private void saveInvertedIndex(List<Integer> valsList) {
         try {
             // change the reviewIds (odd indices) to a difference list (except for the first id):
-            long start = new Date().getTime();
-
             for (int i = valsList.size()-2; i>0; i = i - 2){
                 valsList.set(i, valsList.get(i) - valsList.get(i-2));
             }
-            long end = new Date().getTime();
-            invertedDiff += (end-start);
-
-            start = new Date().getTime();
             byte[] codeBytes = Encoding.groupVarEncodeMultiple(valsList);
-//            byte[] codeBytes = new byte[10];
-//            ArrayList<Integer> tst = Encoding.groupVarDecodeMultiple(codeBytes);
-//            for (int j=0;j<tst.size();j++){
-//                if (!valsList.get(j).equals(tst.get(j))) {
-//                    System.out.println(j + " (val: " + valsList.get(j) + " -> ");
-//                }
-//            }
-            end = new Date().getTime();
-            invertedEncode += (end-start);
-
-            start = new Date().getTime();
             this.invertedIndexFile.write(codeBytes);
-            end = new Date().getTime();
-            invertedSave += (end-start);
-
-
         } catch (Exception e) {
             System.out.println("Error occurred while saving invertedIndex bytes");
             e.printStackTrace();

@@ -14,8 +14,7 @@ public class IndexWriter {
 	private LinkedList<ArrayList<String>> reviewIds;
 
 	private int[][] tokenBuffer = new int[TOKEN_BUFFER_SIZE][2];
-//	private ArrayList<ArrayList<Integer>> tokenBuffer = new ArrayList<ArrayList<Integer>>();
-	; // Array of termID, docID pairs. Regular array to sort in-place
+	// Array of termID, docID pairs. Regular array to sort in-place
 	private int tokenBufferPointer;
 	private int tokenFilesNumber = 0;
 	private String dir;
@@ -26,11 +25,9 @@ public class IndexWriter {
 	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
 	private static final int PAIRS_IN_BLOCK = 1000;
 	private static final int M = 25000;
-//	private static final int M = 25;
 	private static final int TOKEN_BUFFER_SIZE = PAIRS_IN_BLOCK * (M - 1);  // Number of -pairs- in memory. Should be PAIRS_IN_BLOCK * (M-1) or something.
 
 	int NUM_REVIEWS = 10000000;  // todo: remove before submission!
-//	private int numLabeled;
 
 
 	/**
@@ -40,8 +37,6 @@ public class IndexWriter {
 	public void write(String inputFile, String dir) {
 		this.dir = dir;
 		createDir();
-//		numLabeled = 0;
-//		testParser(inputFile);
 		createDicts(inputFile);
 		long startTime = new Date().getTime();
 		createProductIndex();
@@ -65,33 +60,6 @@ public class IndexWriter {
 
 	}
 
-//	public void testParser(String inputFile){
-//		DataLoader dataLoader = null;
-//		DataParser dataParser = new DataParser();
-//		try {
-//			dataLoader = new DataLoader(inputFile);
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//			System.out.println("Error occurred while reading the reviews input file.");
-//			System.exit(1);
-//		}
-//		int i=1;
-//		int readTokens = 0;
-//		for (ArrayList<String> s: dataLoader) {
-//			DataParser.Review review = dataParser.parseReview(s);
-//			int length = addReviewText(review.getText(), i);
-//			readTokens += length;
-//			i++;
-//			if (i > NUM_REVIEWS) { break;}
-//			if (i % 100000 == 0) {
-//				System.out.println("Read " + i + " reviews and " + readTokens + " tokens");
-//			}
-//		}
-//		System.out.println("TOTAL: " + i + " reviews and " + readTokens + " tokens");
-//		System.out.println("Done Reading");
-//		System.out.println("labeled appearances: " + numLabeled);
-//
-//	}
 	/**
 	 * Delete all index files by removing the given directory
 	 */
@@ -159,9 +127,6 @@ public class IndexWriter {
 
 			// todo: remove this part - is used only to test with specific number of reviews
 			if (i > NUM_REVIEWS) { break;}
-			if (i % 100000 == 0) {
-				System.out.println("Read " + i + " reviews and " + readTokens + " tokens");
-			}
 		}
 		System.out.println("Done Reading");
 		System.out.println("TOTAL: Read " + i + " reviews and " + readTokens + " tokens");
@@ -183,7 +148,6 @@ public class IndexWriter {
 
 		startTime = new Date().getTime();
 		ExternalMergeSort ems = new ExternalMergeSort(cmp, tokenFilesNumber, PAIRS_IN_BLOCK, dir);
-		System.out.println("Number of files before merging: " + tokenFilesNumber);
 		ems.sort();
 		endTime = new Date().getTime();
 		System.out.println("Merging Time: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
@@ -268,17 +232,12 @@ public class IndexWriter {
 		for (String token: cleanTokens){
 			reviewLength += 1;
 			token = token.toLowerCase();
-//			if (token.equals("labeled")){
-//				numLabeled++;
-//			}
 			int termId = tokenDict.computeIfAbsent(token, k -> tokenDict.size());
 			if (termId == invertedTokenDict.size()) { invertedTokenDict.add(token);}  // if a new token was added, add it also to the invertedTokenDict
 			tokenBuffer[tokenBufferPointer][0] = termId;
 			tokenBuffer[tokenBufferPointer][1] = reviewIndex;
 			tokenBufferPointer++;
-//			tokenBuffer.add(new ArrayList<>(Arrays.asList(termId, reviewIndex)));
 			if (tokenBufferPointer == TOKEN_BUFFER_SIZE){
-//			if (tokenBuffer.size() == TOKEN_BUFFER_SIZE){
 				this.sortBuffer();
 				try {
 					this.saveBuffer();
@@ -287,17 +246,13 @@ public class IndexWriter {
 					System.exit(1);
 				}
 				this.clearBuffer();
-//				this.tokenBuffer.clear();
-
 			}
 		}
 		return reviewLength;
 	}
 
 	private void sortBuffer() {
-		System.out.println("In sort");
 		Arrays.sort(tokenBuffer,0, tokenBufferPointer, Comparator.comparing(a -> invertedTokenDict.get(a[0])));
-//		tokenBuffer.sort(Comparator.comparing(a -> invertedTokenDict.get(a.get(0))));
 	}
 
 	private void saveBuffer() throws IOException {
@@ -307,10 +262,6 @@ public class IndexWriter {
 			tokenBufferWriter.writeInt(tokenBuffer[i][0]);
 			tokenBufferWriter.writeInt(tokenBuffer[i][1]);
 		}
-//		for (int i = 0; i < tokenBuffer.size(); i++) {
-//			tokenBufferWriter.writeInt(tokenBuffer.get(i).get(0));
-//			tokenBufferWriter.writeInt(tokenBuffer.get(i).get(1));
-//		}
 		tokenBufferWriter.close();
 	}
 
@@ -371,26 +322,14 @@ public class IndexWriter {
 	 */
 	private void createTokenIndex(){
 		ArrayList<String> tokens = new ArrayList<>(tokenDict.keySet());
-		long startTime = new Date().getTime();
 		Collections.sort(tokens);
-		long endTime = new Date().getTime();
-		System.out.println("Token Index After Sort: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
 
 		tokenDict = null;
-		startTime = new Date().getTime();
-
 		int k = 256;
 		KFront kf = new KFront(true);
 		kf.createKFront(k, tokens);
-		endTime = new Date().getTime();
-		System.out.println("Token Index After KFront: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
-
-		startTime = new Date().getTime();
 		TokensIndex tIdx = new TokensIndex(k, this.dir);
 		tIdx.insertData(kf.getTable(), kf.getConcatString(), dir + "/1");
-		endTime = new Date().getTime();
-		System.out.println("Token Index Inserting Data: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
-
 		saveToDir(TOKEN_INDEX_FILE, tIdx);
 	}
 
@@ -442,8 +381,8 @@ public class IndexWriter {
 	}
 
 	public static void main(String[] args) {
-		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
-//		String inputFile = "./100.txt";
+//		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
+		String inputFile = "./1000.txt";
 		String dir = "./Data_Index";
 		long startTime = new Date().getTime();
 		IndexWriter indexWriter = new IndexWriter();

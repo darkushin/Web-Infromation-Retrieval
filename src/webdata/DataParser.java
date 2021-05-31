@@ -44,18 +44,11 @@ public class DataParser {
         }
     }
 
-//    public static final List<String> INTEREST_FIELDS = Arrays.asList("productId", "score", "helpfulness", "text");
-
-
     /**
      * Given product review data, parses the data and creates a new list where each entry i contains hashmap with the fields
      * of the review, i.e: productId->value, score->value, helpfulness->value, text->value.
      * inputFile is the path to the file containing the review data
      */
-//    public DataParser(String inputFile) throws IOException {
-//        allReviews.add(parse_review(review.toString()));  // add the last review
-//    }
-
     public List<Review> parseData(List<String> rawReviews){
         ArrayList<Review> allReviews = new ArrayList<>();
         for (String review: rawReviews){
