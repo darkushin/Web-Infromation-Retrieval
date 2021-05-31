@@ -82,7 +82,6 @@ public class TokensIndex implements Serializable {
         dictString = concatString;
         PairsLoader pl = new PairsLoader(pairsFilename);
         int offset = 0;
-
         int[] curPair = pl.readPair(); // This should correspond to the first token
 
         for (int i=0; i< tokensData.size(); i++){
@@ -134,22 +133,6 @@ public class TokensIndex implements Serializable {
             tokenData = null;
         }
         this.dictBytes = this.dictString.getBytes(StandardCharsets.UTF_8).length;
-    }
-
-    /**
-     * Create a sub list of the given list containing only the odd/even elements in the array
-     * @param inputList the list that should be sliced
-     * @param type can be `odd` or `even`
-     * @return a List of integers containing only the elements in odd/even indices of the input array 
-     */
-    private List<Integer> subListVals(List<Integer> inputList, String type){
-        int first = 0;
-        List<Integer> subList = new ArrayList<>();
-        if (type.equals("even")){ first = 1; }
-        for (int i = first; i < inputList.size(); i = i + 2){
-            subList.add(inputList.get(i));
-        }
-        return subList;
     }
 
     /**

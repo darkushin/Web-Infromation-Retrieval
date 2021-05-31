@@ -128,7 +128,6 @@ public class ProductIndex implements Serializable {
         k = inputFile.readInt();
         dictBytes = inputFile.readInt();
         dictString = new String(inputFile.readNBytes(dictBytes), StandardCharsets.UTF_8);
-//        dictString = inputFile.readUTF();
         data = (ArrayList<ProductInfo>) inputFile.readObject();
     }
 
@@ -137,7 +136,6 @@ public class ProductIndex implements Serializable {
         outputFile.writeInt(k);
         outputFile.writeInt(this.dictBytes);
         outputFile.writeBytes(this.dictString);
-//        outputFile.writeUTF(dictString);
         outputFile.writeObject(data);
     }
 

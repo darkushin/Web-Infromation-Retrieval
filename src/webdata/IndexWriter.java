@@ -38,26 +38,13 @@ public class IndexWriter {
 		this.dir = dir;
 		createDir();
 		createDicts(inputFile);
-		long startTime = new Date().getTime();
 		createProductIndex();
-		long endTime = new Date().getTime();
-		System.out.println("Create Product Index: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
-
-		startTime = new Date().getTime();
 		createReviewIndex();
-		endTime = new Date().getTime();
-		System.out.println("Create Review Index: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
-
 		productIds = null;
-		reviewIds = null; // Clears memory?
-
-		startTime = new Date().getTime();
+		reviewIds = null; // Clear memory
 		createTokenIndex();
-		endTime = new Date().getTime();
-		System.out.println("Create Token Index: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
 		File mergedDataFile = new File(dir + "/1");
 		mergedDataFile.delete();
-
 	}
 
 	/**
@@ -96,7 +83,6 @@ public class IndexWriter {
 		reviewIds = new LinkedList<>();
 		invertedTokenDict = new ArrayList<>();
 
-		// todo: remove the directory creation from here!
 		try {
 			Files.createDirectories(Path.of(this.dir + ExternalMergeSort.folderName + "1"));
 		} catch (IOException e) {
@@ -114,24 +100,18 @@ public class IndexWriter {
 			System.out.println("Error occurred while reading the reviews input file.");
 			System.exit(1);
 		}
-		long startTime = new Date().getTime();
+		// todo: remove i
 		int i=1;
-		int readTokens = 0;
 		for (ArrayList<String> s: dataLoader){
 			DataParser.Review review = dataParser.parseReview(s);
 			addProductId(review.getProductId(), i);
 			int length = addReviewText(review.getText(), i);
 			addReviewId(review, i, length);
-			readTokens += length;
 			i++;
 
 			// todo: remove this part - is used only to test with specific number of reviews
 			if (i > NUM_REVIEWS) { break;}
 		}
-		System.out.println("Done Reading");
-		System.out.println("TOTAL: Read " + i + " reviews and " + readTokens + " tokens");
-
-
 		this.sortBuffer();
 		try {
 			this.saveBuffer();
@@ -139,84 +119,12 @@ public class IndexWriter {
 			e.printStackTrace();
 			System.exit(1);
 		}
-
-		long endTime = new Date().getTime();
-		System.out.println("Data Loading And Saving Time: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
-
 		this.tokenBuffer = null;  // free the token buffer space
 		Comparator<Integer> cmp = Comparator.comparing(a -> invertedTokenDict.get(a));
 
-		startTime = new Date().getTime();
 		ExternalMergeSort ems = new ExternalMergeSort(cmp, tokenFilesNumber, PAIRS_IN_BLOCK, dir);
 		ems.sort();
-		endTime = new Date().getTime();
-		System.out.println("Merging Time: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
 	}
-
-	// TODO: for debugging. Remove this later
-	private boolean isFileSorted(String fileName, Comparator<Integer> cmp) {
-		FileInputStream fileIn = null;
-		ObjectInputStream ois = null;
-		long tot = 0;
-		try {
-			fileIn = new FileInputStream(fileName);
-			ois = new ObjectInputStream(fileIn);
-			int prev = ois.readInt();
-			int prevDocId = ois.readInt();
-			tot++;
-			while (true) {
-				int cur = ois.readInt();
-				int docId = ois.readInt();
-				if (cmp.compare(prev, cur) > 0) {
-					System.out.println("Terms not sorted. Occured in " + tot);
-				} else if ((cmp.compare(prev, cur) == 0) && (prevDocId > docId)) {
-					System.out.println("DocIds not sorted. Occured in " + tot);
-				}
-				prev = cur;
-				prevDocId = docId;
-				tot++;
-			}
-		}  catch (EOFException ex) {
-			System.out.println("Read " + tot + " pairs.");
-			try {
-				ois.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
-			return true;
-		} catch (IOException ex) {
-			ex.printStackTrace();
-			System.exit(1);
-		}
-		return true;
-	}
-	private long countNumsInFile(String fileName) {
-		FileInputStream fileIn;
-		ObjectInputStream ois = null;
-		long tot = 0;
-		try {
-			fileIn = new FileInputStream(fileName);
-			ois = new ObjectInputStream(fileIn);
-			while (true) {
-				ois.readInt();
-				tot++;
-			}
-		}  catch (EOFException ex) {
-			try {
-				ois.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
-			return tot;
-		} catch (IOException ex) {
-			ex.printStackTrace();
-			System.exit(1);
-		}
-		return tot;
-	}
-
 
 	/**
 	 * Split the given text of the i-th review into tokens and add them to the tokens dictionary.

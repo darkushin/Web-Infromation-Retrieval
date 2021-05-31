@@ -1,10 +1,7 @@
 package webdata;
 
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 
@@ -206,9 +203,4 @@ public class IndexReader {
 		}
 		return Collections.enumeration(reviews);
 	}
-
-//	public static void main(String[] args) {
-//		IndexReader indexReader = new IndexReader("./Data_index");
-//		indexReader.getReviewsWithToken("0");
-//	}
 }
