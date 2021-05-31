@@ -25,9 +25,6 @@ public class IndexWriter {
 	private static final int M = 25000;
 	private static final int TOKEN_BUFFER_SIZE = PAIRS_IN_BLOCK * (M - 1);  // Number of -pairs- in memory. Should be PAIRS_IN_BLOCK * (M-1) or something.
 
-	int NUM_REVIEWS = 10000000;  // todo: remove before submission!
-
-
 	/**
 	* Given product review data, creates an on disk index
 	* inputFile is the path to the file containing the review data
@@ -98,7 +95,6 @@ public class IndexWriter {
 			System.out.println("Error occurred while reading the reviews input file.");
 			System.exit(1);
 		}
-		// todo: remove i
 		int i=1;
 		for (ArrayList<String> s: dataLoader){
 			DataParser.Review review = dataParser.parseReview(s);
@@ -106,9 +102,6 @@ public class IndexWriter {
 			int length = addReviewText(review.getText(), i);
 			addReviewId(review, i, length);
 			i++;
-
-			// todo: remove this part - is used only to test with specific number of reviews
-			if (i > NUM_REVIEWS) { break;}
 		}
 		this.sortBuffer();
 		try {
@@ -284,13 +277,5 @@ public class IndexWriter {
 			e.printStackTrace();
 			System.exit(1);
 		}
-	}
-
-	public static void main(String[] args) {
-		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
-//		String inputFile = "./1000.txt";
-		String dir = "./Data_Index";
-		IndexWriter indexWriter = new IndexWriter();
-		indexWriter.write(inputFile, dir);
 	}
 }

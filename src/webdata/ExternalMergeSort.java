@@ -37,7 +37,6 @@ public class ExternalMergeSort {
             for (int i = 0; i < Math.ceil((float) numFiles / (AVAILABLE_BLOCKS - 1)); i++) {
                 int end = Math.min(numFiles, (i + 1) * (AVAILABLE_BLOCKS - 1));
                 try {
-                    // TODO: Handle case when start == end?
                     SingleMerge sm = new SingleMerge(i * (AVAILABLE_BLOCKS - 1) + 1, end);
                     sm.merge();
                 } catch (IOException e) {
