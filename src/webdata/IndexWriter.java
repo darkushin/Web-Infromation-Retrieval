@@ -4,8 +4,6 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.Date;
-
 
 public class IndexWriter {
 	private HashMap<String, Integer> tokenDict;  // token: tokenId
@@ -289,13 +287,10 @@ public class IndexWriter {
 	}
 
 	public static void main(String[] args) {
-//		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
-		String inputFile = "./1000.txt";
+		String inputFile = "/Users/darkushin/Downloads/Movies_&_TV.txt";
+//		String inputFile = "./1000.txt";
 		String dir = "./Data_Index";
-		long startTime = new Date().getTime();
 		IndexWriter indexWriter = new IndexWriter();
 		indexWriter.write(inputFile, dir);
-		long endTime = new Date().getTime();
-		System.out.println("Indexing Time: " + (endTime-startTime) + " Milliseconds = " + ((endTime - startTime) / 1000) + " Seconds");
 	}
 }

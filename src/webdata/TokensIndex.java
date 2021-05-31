@@ -110,7 +110,7 @@ public class TokensIndex implements Serializable {
             curPair = nextPair; // Save the pair for the next token
 
             try {
-                token.invertedIndexPtr = (int) this.invertedIndexFile.getFilePointer();
+                token.invertedIndexPtr = this.invertedIndexFile.getFilePointer();
             } catch (IOException e) {
                 e.printStackTrace();
                 System.exit(1);
