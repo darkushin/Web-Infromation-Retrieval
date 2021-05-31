@@ -96,14 +96,15 @@ public class DataParser {
                 continue;
             }
             String field = line.substring(prefix + 1, delim);
-            switch (field) {
-                case "text" -> {
-                    text.append(line.substring(delim + 2));
-                    readingText = true;
-                }
-                case "productId" -> parsedReview.setProductId(line.substring(delim + 2));
-                case "helpfulness" -> parsedReview.setHelpfulness(line.substring(delim + 2));
-                case "score" -> parsedReview.setScore(line.substring(delim + 2));
+            if (field.equals("text")){
+                text.append(line.substring(delim + 2));
+                readingText = true;
+            } else if (field.equals("productId")) {
+                parsedReview.setProductId(line.substring(delim + 2));
+            } else if (field.equals("helpfulness")) {
+                parsedReview.setHelpfulness(line.substring(delim + 2));
+            } else if (field.equals("score")) {
+                parsedReview.setScore(line.substring(delim + 2));
             }
         }
         parsedReview.setText(text.toString());
