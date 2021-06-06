@@ -30,6 +30,7 @@ public class DataParser {
             }
         }
         allReviews.add(parse_review(review.toString()));  // add the last review
+        // Comment test
     }
 
     /**
