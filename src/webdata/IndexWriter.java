@@ -5,7 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-public class SlowIndexWriter {
+public class IndexWriter {
 	private TreeMap<String, ArrayList<Integer>> tokenDict;  // keys are tokens, values are a list where odd cells are review ids including this token and even cells are the times the token appeared in the review.
 	private TreeMap<String, ArrayList<Integer>> productIds;
 	private TreeMap<Integer, ArrayList<String>> reviewIds;
@@ -21,7 +21,7 @@ public class SlowIndexWriter {
 	* Given product review data, creates an on disk index
 	* inputFile is the path to the file containing the review data
 	*/
-	public void slowWrite(String inputFile, String dir) {
+	public void write(String inputFile, String dir) {
 		this.dir = dir;
 		createDicts(inputFile);
 		createDir();
@@ -200,7 +200,7 @@ public class SlowIndexWriter {
 
 	/**
 	 * Save the given object to disk under the given name. The file is saved to the dir that was passed to the
-	 * SlowWrite() function.
+	 * write() function.
 	 */
 	private void saveToDir(String name, Object obj) {
 		FileOutputStream fileOut = null;
