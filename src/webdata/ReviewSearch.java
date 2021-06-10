@@ -67,13 +67,13 @@ public class ReviewSearch {
             double smooth = (1 - lambda) * (double) ir.getTokenCollectionFrequency(token) / ir.getTokenSizeOfReviews();
             HashMap<Integer, Double> tokenScores = getDocScores(token, "languageModel");
             for (Map.Entry<Integer, Double> ent : tokenScores.entrySet()) {
-//                double val = lambda * ent.getValue() + smooth;
-                double val = Math.log(lambda * ent.getValue() + smooth);
-//                scores.merge(ent.getKey(), Math.pow(val, toks), (x, y) -> x*val);
-                scores.merge(ent.getKey(), val * toks, (x, y) -> x + val);
+                double val = lambda * ent.getValue() + smooth;
+//                double val = Math.log(lambda * ent.getValue() + smooth);
+                scores.merge(ent.getKey(), val * Math.pow(smooth, toks-1), (x, y) -> x*val);
+//                scores.merge(ent.getKey(), val * toks, (x, y) -> x + val);
             }
         }
-        scores.replaceAll((key, v) -> Math.exp(v));
+//        scores.replaceAll((key, v) -> Math.exp(v));
         return kHighestScores(scores, k);
     }
 
