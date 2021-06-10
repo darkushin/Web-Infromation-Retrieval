@@ -67,10 +67,13 @@ public class ReviewSearch {
             double smooth = (1 - lambda) * (double) ir.getTokenCollectionFrequency(token) / ir.getTokenSizeOfReviews();
             HashMap<Integer, Double> tokenScores = getDocScores(token, "languageModel");
             for (Map.Entry<Integer, Double> ent : tokenScores.entrySet()) {
-                double val = lambda * ent.getValue() + smooth;
-                scores.merge(ent.getKey(), Math.pow(val, toks), (x, y) -> x*val);
+//                double val = lambda * ent.getValue() + smooth;
+                double val = Math.log(lambda * ent.getValue() + smooth);
+//                scores.merge(ent.getKey(), Math.pow(val, toks), (x, y) -> x*val);
+                scores.merge(ent.getKey(), val * toks, (x, y) -> x + val);
             }
         }
+        scores.replaceAll((key, v) -> Math.exp(v));
         return kHighestScores(scores, k);
     }
 
@@ -130,6 +133,14 @@ public class ReviewSearch {
     private Enumeration<Integer> kHighestScores(HashMap<Integer, Double> scores, int k){
         List<Map.Entry<Integer, Double>> list = new ArrayList<>(scores.entrySet());
         list.sort(Map.Entry.comparingByValue());
+        list.sort((x, y) -> {
+            int cmp = x.getValue().compareTo(y.getValue());
+            if (cmp == 0) {
+                return x.getKey().compareTo(y.getKey());
+            } else {
+                return cmp;
+            }
+        });
         ArrayList<Integer> result = new ArrayList<>();
         for (int i = 0; i < Math.min(k, list.size()); i++) {
             result.add(list.get(list.size() - i - 1).getKey());
