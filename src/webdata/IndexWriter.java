@@ -63,7 +63,7 @@ public class IndexWriter {
 	private void createDicts(String inputFile){
 		productIds = new TreeMap<>();
 		tokenDict = new TreeMap<>();
-		reviewIds = new TreeMap<>();
+		reviewIds = new LinkedList<>();
 
 		DataLoader dataLoader = null;
 		DataParser dataParser = new DataParser();
@@ -79,8 +79,9 @@ public class IndexWriter {
 		for (ArrayList<String> s: dataLoader){
 			DataParser.Review review = dataParser.parseReview(s);
 			addProductId(review.getProductId(), i + 1);
-			int length = addReviewText(dataParser.allReviews.get(i).get("text"), i + 1);
+			int length = addReviewText(review.getText(), i);
 			addReviewId(review, i, length);
+			readTokens += length;
 			i++;
 		}
 	}
@@ -187,11 +188,16 @@ public class IndexWriter {
 	 */
 	private void createReviewIndex() {
 		// Revise the review dictionary to the correct structure & change productIDs to product index
-		LinkedList<List<Integer>> dictValues = new LinkedList<>();
-		for (int review : reviewIds.keySet()) {
-			ArrayList<String> vals = reviewIds.get(review);
+		ArrayList<List<Integer>> dictValues = new ArrayList<>();
+		HashMap<String, Integer> productDict = new HashMap<>(productIds.size());
+		int i = 0;
+		for (String productId: productIds.keySet()){
+			productDict.put(productId, i);
+			i++;
+		}
+		for (ArrayList<String> vals : reviewIds) {
 			ArrayList<Integer> new_vals = new ArrayList<>(List.of(0, 0, 0, 0, 0));
-			new_vals.set(ReviewIndex.PRODUCTID_INDEX, productIds.headMap(vals.get(0)).size());
+			new_vals.set(ReviewIndex.PRODUCTID_INDEX, productDict.get(vals.get(0)));
 			String[] helpf = vals.get(2).split("/");
 			new_vals.set(ReviewIndex.HELPFNUM_INDEX, Integer.parseInt(helpf[0]));
 			new_vals.set(ReviewIndex.HELPFDNOM_INDEX, Integer.parseInt(helpf[1]));
