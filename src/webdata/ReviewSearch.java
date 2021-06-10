@@ -132,9 +132,8 @@ public class ReviewSearch {
 
     private Enumeration<Integer> kHighestScores(HashMap<Integer, Double> scores, int k){
         List<Map.Entry<Integer, Double>> list = new ArrayList<>(scores.entrySet());
-        list.sort(Map.Entry.comparingByValue());
         list.sort((x, y) -> {
-            int cmp = x.getValue().compareTo(y.getValue());
+            int cmp = y.getValue().compareTo(x.getValue());
             if (cmp == 0) {
                 return x.getKey().compareTo(y.getKey());
             } else {
@@ -143,7 +142,7 @@ public class ReviewSearch {
         });
         ArrayList<Integer> result = new ArrayList<>();
         for (int i = 0; i < Math.min(k, list.size()); i++) {
-            result.add(list.get(list.size() - i - 1).getKey());
+            result.add(list.get(i).getKey());
         }
         return Collections.enumeration(result);
     }
