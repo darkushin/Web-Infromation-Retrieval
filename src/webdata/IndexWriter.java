@@ -23,8 +23,8 @@ public class IndexWriter {
 	*/
 	public void write(String inputFile, String dir) {
 		this.dir = dir;
-		createDicts(inputFile);
 		createDir();
+		createDicts(inputFile);
 		createProductIndex();
 		createTokenIndex();
 		createReviewIndex();
@@ -78,7 +78,7 @@ public class IndexWriter {
 		int readTokens = 0;
 		for (ArrayList<String> s: dataLoader){
 			DataParser.Review review = dataParser.parseReview(s);
-			addProductId(review.getProductId(), i + 1);
+			addProductId(review.getProductId(), i);
 			int length = addReviewText(review.getText(), i);
 			addReviewId(review, i, length);
 			readTokens += length;
