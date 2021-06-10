@@ -83,18 +83,6 @@ public class ReviewSearch {
             }
             total_smooth *= smooth;
         }
-
-        // If k is larger than the number of results to the query, append the lowest reviewId's
-//        int diff = k - scores.size();
-//        for (int i=1; i <= ir.getNumberOfReviews(); i++) {
-//            if (diff <= 0) {
-//                break;
-//            }
-//            if (!scores.containsKey(i)) {
-//                scores.put(i, total_smooth);
-//                diff--;
-//            }
-//        }
         return kHighestScores(scores, k);
     }
 
