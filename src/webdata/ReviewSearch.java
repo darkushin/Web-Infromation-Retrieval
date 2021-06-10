@@ -29,7 +29,7 @@ public class ReviewSearch {
                 fullQuery.put(token, 1);
             }
         }
-        HashMap<String, Float> queryScores = this.computeTokenQueryScore(fullQuery);
+        HashMap<String, Double> queryScores = this.computeTokenQueryScore(fullQuery);
 
         HashMap<Integer, Double> scores= new HashMap<>();
         for (String token: fullQuery.keySet()){
@@ -83,13 +83,13 @@ public class ReviewSearch {
         return null;
     }
 
-    private HashMap<String, Float> computeTokenQueryScore(HashMap<String, Integer> query) {
-        HashMap<String, Float> scores = new HashMap<>();
+    private HashMap<String, Double> computeTokenQueryScore(HashMap<String, Integer> query) {
+        HashMap<String, Double> scores = new HashMap<>();
 
         // compute the tf and idf values of every token:
         for (String token: query.keySet()) {
-            float tf = (float) (1 + Math.log10(query.get(token)));
-            float df = (float) Math.log10(ir.getNumberOfReviews() / ir.getTokenFrequency(token));
+            double tf = 1 + Math.log10(query.get(token));
+            double df = Math.log10((double) ir.getNumberOfReviews() / ir.getTokenFrequency(token));
             scores.put(token, tf*df);
         }
 
@@ -101,7 +101,7 @@ public class ReviewSearch {
 
         // normalize the values by dividing in the vector's norm:
         for (String token: scores.keySet()){
-            float normalizedScore = (float) (scores.get(token) / vectorNorm);
+            double normalizedScore = scores.get(token) / vectorNorm;
             scores.put(token, normalizedScore);
         }
         return scores;
