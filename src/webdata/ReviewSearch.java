@@ -1,5 +1,6 @@
 package webdata;
 
+import javax.lang.model.type.ArrayType;
 import java.util.*;
 import java.lang.Math.*;
 
@@ -48,10 +49,6 @@ public class ReviewSearch {
         return kHighestScores(scores, k);
     }
 
-
-
-
-
     /**
      * Returns a list of the id-s of the k most highly ranked reviews for the
      * given query, using the language model ranking function, smoothed using a
@@ -92,7 +89,35 @@ public class ReviewSearch {
      * The list should be sorted by the ranking
      */
     public Collection<String> productSearch(Enumeration<String> query, int k) {
-        return null;
+        Enumeration<Integer> relevantReviews = this.vectorSpaceSearch(query, this.ir.getNumberOfReviews());
+        HashMap<String, ArrayList<ArrayList<Integer>>> products = new HashMap<>();
+        int reviewRank = 1;
+        while (relevantReviews.hasMoreElements()) {
+            int reviewId = relevantReviews.nextElement();
+            String productId = ir.getProductId(reviewId);
+            if (!products.containsKey(productId)){
+                products.put(productId, new ArrayList<>());
+            }
+            products.get(productId).add(new ArrayList<>(Arrays.asList(reviewId, reviewRank)));
+            reviewRank++;
+        }
+        HashMap<String, Double> productRelevance = new HashMap<>();
+        for (Map.Entry<String, ArrayList<ArrayList<Integer>>> product: products.entrySet()){
+            productRelevance.put(product.getKey() ,this.getProductRelevance(product.getValue()));
+        }
+
+        HashMap<String, Double> productQuality = new HashMap<>();
+        for (String product: products.keySet()){
+            productQuality.put(this.getProductQuality(product));
+        }
+
+        double alpha = 0.5;
+        HashMap<String, Double> productScores = new HashMap<>();
+        for (String product: productRelevance.keySet()){
+            productScores.put(product, alpha*productRelevance.get(product) + (1-alpha)*productQuality.get(product));
+        }
+        Enumeration<String> topProducts = kHighestScores(productScores, k);
+        return Collections.list(topProducts);
     }
 
     private HashMap<String, Double> computeTokenQueryScore(HashMap<String, Integer> query) {
@@ -139,8 +164,8 @@ public class ReviewSearch {
         return scores;
     }
 
-    private Enumeration<Integer> kHighestScores(HashMap<Integer, Double> scores, int k){
-        List<Map.Entry<Integer, Double>> list = new ArrayList<>(scores.entrySet());
+    private <T extends Comparable<T>> Enumeration<T> kHighestScores(HashMap<T, Double> scores, int k){
+        List<Map.Entry<T, Double>> list = new ArrayList<>(scores.entrySet());
         list.sort((x, y) -> {
             int cmp = y.getValue().compareTo(x.getValue());
             if (cmp == 0) {
@@ -149,7 +174,7 @@ public class ReviewSearch {
                 return cmp;
             }
         });
-        ArrayList<Integer> result = new ArrayList<>();
+        ArrayList<T> result = new ArrayList<>();
         for (int i = 0; i < Math.min(k, list.size()); i++) {
             result.add(list.get(i).getKey());
         }
@@ -163,6 +188,6 @@ public class ReviewSearch {
 
         IndexReader ir = new IndexReader(dir);
         ReviewSearch rs = new ReviewSearch(ir);
-        rs.languageModelSearch(Collections.enumeration(Arrays.asList("what", "the", "hell")), 0.4, 10);
+//        rs.productSearch(Collections.enumeration(Arrays.asList("dog")), 10);
     }
 }
