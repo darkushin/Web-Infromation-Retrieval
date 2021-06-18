@@ -108,7 +108,7 @@ public class ReviewSearch {
 
         HashMap<String, Double> productQuality = new HashMap<>();
         for (String product: products.keySet()){
-            productQuality.put(this.getProductQuality(product));
+            productQuality.put(product, this.getProductQuality(product));
         }
 
         double alpha = 0.5;
@@ -118,6 +118,22 @@ public class ReviewSearch {
         }
         Enumeration<String> topProducts = kHighestScores(productScores, k);
         return Collections.list(topProducts);
+    }
+
+    private double getProductRelevance(ArrayList<ArrayList<Integer>> reviews) {
+
+        for (ArrayList<Integer> vals : reviews) {
+            int reviewScore = ir.getReviewScore(vals.get(0));
+            int reviewHelpfulnessNumerator = ir.getReviewHelpfulnessNumerator(vals.get(0));
+            int reviewHelpfulnessDenominator = ir.getReviewHelpfulnessDenominator(vals.get(0));
+            int reviewLength = ir.getReviewLength(vals.get(0));
+        }
+
+        return 1;
+    }
+
+    private double getProductQuality(String p) {
+        return 1;
     }
 
     private HashMap<String, Double> computeTokenQueryScore(HashMap<String, Integer> query) {
@@ -188,6 +204,6 @@ public class ReviewSearch {
 
         IndexReader ir = new IndexReader(dir);
         ReviewSearch rs = new ReviewSearch(ir);
-//        rs.productSearch(Collections.enumeration(Arrays.asList("dog")), 10);
+        rs.productSearch(Collections.enumeration(Arrays.asList("dog")), 10);
     }
 }
