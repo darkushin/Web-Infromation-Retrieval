@@ -122,25 +122,15 @@ public class ReviewSearch {
 
     private double getProductRelevance(ArrayList<ArrayList<Integer>> reviews) {
 
-        for (ArrayList<Integer> vals : reviews) {
-            int reviewScore = ir.getReviewScore(vals.get(0));
-            int reviewHelpfulnessNumerator = ir.getReviewHelpfulnessNumerator(vals.get(0));
-            int reviewHelpfulnessDenominator = ir.getReviewHelpfulnessDenominator(vals.get(0));
-            int reviewLength = ir.getReviewLength(vals.get(0));
-        }
-
         return 1;
     }
 
-    private double getProductQuality(String p) {
+    private HashMap<Integer, Double> reviewNormalizedScore(Enumeration<Integer> productReviews) {
         int REVIEW_SCORE = 0;
         int REVIEW_LENGTH = 1;
         int REVIEW_NUMERATOR = 2;
         int REVIEW_DENOMINATOR = 3;
         double ALPHA = 0.5;
-
-        // todo: use score, helpfulness and length
-        Enumeration<Integer> productReviews = this.ir.getProductReviews(p);
         // HashMap where each key is a review id and the values are an array list of [score, length, helpfulness numerator, helpfulness denominator]
         HashMap<Integer, ArrayList<Integer>> reviewsInfo = new HashMap<>();
 
@@ -172,16 +162,25 @@ public class ReviewSearch {
             reviewsInfo.put(reviewId, new ArrayList<>(Arrays.asList(reviewScore, length, numerator, denominator)));
         }
 
-        double productQuality = 0;
-        for (ArrayList<Integer> review: reviewsInfo.values()){
+        HashMap<Integer, Double> ret = new HashMap<>();
+        for (Map.Entry<Integer, ArrayList<Integer>> entry: reviewsInfo.entrySet()){
             double helpfulness;
-            if (review.get(REVIEW_DENOMINATOR) > 0) {
-                double normalizedDenominator = (double) review.get(REVIEW_DENOMINATOR) / maxDenominator;
-                helpfulness = (double) (review.get(REVIEW_NUMERATOR) / review.get(REVIEW_DENOMINATOR)) * normalizedDenominator;
+            if (entry.getValue().get(REVIEW_DENOMINATOR) > 0) {
+                double normalizedDenominator = (double) entry.getValue().get(REVIEW_DENOMINATOR) / maxDenominator;
+                helpfulness = (double) (entry.getValue().get(REVIEW_NUMERATOR) / entry.getValue().get(REVIEW_DENOMINATOR)) * normalizedDenominator;
             } else {helpfulness = 0.05;}
-            double normalizedLength = (double) review.get(REVIEW_LENGTH) / maxLength;
-            double totalReviewScore = (ALPHA * normalizedLength + (1 - ALPHA) * helpfulness) * review.get(REVIEW_SCORE);
-            productQuality += (totalReviewScore / reviewsInfo.size());
+            double normalizedLength = (double) entry.getValue().get(REVIEW_LENGTH) / maxLength;
+            double totalReviewScore = (ALPHA * normalizedLength + (1 - ALPHA) * helpfulness) * entry.getValue().get(REVIEW_SCORE);
+            ret.put(entry.getKey(), totalReviewScore);
+        }
+        return ret;
+    }
+
+    double productQuality = 0;
+    private double getProductQuality(String p) {
+        HashMap<Integer, Double> normalizedScores = reviewNormalizedScore(this.ir.getProductReviews(p));
+        for (Double nscore: normalizedScores.values()){
+            productQuality += (nscore / normalizedScores.size());
         }
         return productQuality;
     }
