@@ -133,7 +133,57 @@ public class ReviewSearch {
     }
 
     private double getProductQuality(String p) {
-        return 1;
+        int REVIEW_SCORE = 0;
+        int REVIEW_LENGTH = 1;
+        int REVIEW_NUMERATOR = 2;
+        int REVIEW_DENOMINATOR = 3;
+        double ALPHA = 0.5;
+
+        // todo: use score, helpfulness and length
+        Enumeration<Integer> productReviews = this.ir.getProductReviews(p);
+        // HashMap where each key is a review id and the values are an array list of [score, length, helpfulness numerator, helpfulness denominator]
+        HashMap<Integer, ArrayList<Integer>> reviewsInfo = new HashMap<>();
+
+        // Save the length longest review and greatest denominator value for normalization:
+        int maxLength = 0;
+        int maxDenominator = 0;
+
+        // Extract all necessary information from all reviews:
+        while (productReviews.hasMoreElements()) {
+            int reviewId = productReviews.nextElement();
+            int reviewScore = this.ir.getReviewScore(reviewId);
+            int numerator = this.ir.getReviewHelpfulnessNumerator(reviewId);
+            int denominator = this.ir.getReviewHelpfulnessDenominator(reviewId);
+            int length = this.ir.getReviewLength(reviewId);
+
+            // check that denominator is larger than numerator, if not swap:
+            if (numerator > denominator){
+                numerator = denominator;
+                denominator = this.ir.getReviewHelpfulnessNumerator(reviewId);
+            }
+
+            if (length > maxLength){
+                maxLength = length;
+            }
+            if (denominator > maxDenominator){
+                maxDenominator = denominator;
+            }
+
+            reviewsInfo.put(reviewId, new ArrayList<>(Arrays.asList(reviewScore, length, numerator, denominator)));
+        }
+
+        double productQuality = 0;
+        for (ArrayList<Integer> review: reviewsInfo.values()){
+            double helpfulness;
+            if (review.get(REVIEW_DENOMINATOR) > 0) {
+                double normalizedDenominator = (double) review.get(REVIEW_DENOMINATOR) / maxDenominator;
+                helpfulness = (double) (review.get(REVIEW_NUMERATOR) / review.get(REVIEW_DENOMINATOR)) * normalizedDenominator;
+            } else {helpfulness = 0.05;}
+            double normalizedLength = (double) review.get(REVIEW_LENGTH) / maxLength;
+            double totalReviewScore = (ALPHA * normalizedLength + (1 - ALPHA) * helpfulness) * review.get(REVIEW_SCORE);
+            productQuality += (totalReviewScore / reviewsInfo.size());
+        }
+        return productQuality;
     }
 
     private HashMap<String, Double> computeTokenQueryScore(HashMap<String, Integer> query) {
@@ -204,6 +254,6 @@ public class ReviewSearch {
 
         IndexReader ir = new IndexReader(dir);
         ReviewSearch rs = new ReviewSearch(ir);
-        rs.productSearch(Collections.enumeration(Arrays.asList("dog")), 10);
+        rs.productSearch(Collections.enumeration(Arrays.asList("pop", "tart", "tarts")), 10);
     }
 }
