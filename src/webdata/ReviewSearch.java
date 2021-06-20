@@ -101,17 +101,17 @@ public class ReviewSearch {
             products.get(productId).add(new ArrayList<>(Arrays.asList(reviewId, reviewRank)));
             reviewRank++;
         }
-        HashMap<String, Double> productRelevance = new HashMap<>();
-        for (Map.Entry<String, ArrayList<ArrayList<Integer>>> product: products.entrySet()){
-            productRelevance.put(product.getKey() ,this.getProductRelevance(product.getValue()));
-        }
+        HashMap<String, Double> productRelevance = getProductRelevance(products);
+//        for (Map.Entry<String, ArrayList<ArrayList<Integer>>> product: products.entrySet()){
+//            productRelevance.put(product.getKey() ,this.getProductRelevance(product.getValue()));
+//        }
 
         HashMap<String, Double> productQuality = new HashMap<>();
         for (String product: products.keySet()){
             productQuality.put(product, this.getProductQuality(product));
         }
 
-        double alpha = 0.5;
+        double alpha = 0.9;
         HashMap<String, Double> productScores = new HashMap<>();
         for (String product: productRelevance.keySet()){
             productScores.put(product, alpha*productRelevance.get(product) + (1-alpha)*productQuality.get(product));
@@ -120,12 +120,39 @@ public class ReviewSearch {
         return Collections.list(topProducts);
     }
 
-    private double getProductRelevance(ArrayList<ArrayList<Integer>> reviews) {
+    private HashMap<String, Double> getProductRelevance(HashMap<String, ArrayList<ArrayList<Integer>>> products) {
+        HashMap<Integer, Double> nrmlzd = reviewNormalized(new Enumeration<Integer>() {
+            Iterator<ArrayList<ArrayList<Integer>>> it = products.values().iterator();
+            Iterator<ArrayList<Integer>> cur = null;
+            @Override
+            public boolean hasMoreElements() {
+                if (!it.hasNext()) {
+                    return cur != null && cur.hasNext();
+                }
+                return true;
+            }
 
-        return 1;
+            @Override
+            public Integer nextElement() {
+                if (cur == null || !cur.hasNext()) {
+                    cur = it.next().iterator();
+                }
+                return cur.next().get(0);
+            }
+        }, false);
+
+        HashMap<String, Double> ret = new HashMap<>();
+        for (Map.Entry<String, ArrayList<ArrayList<Integer>>> ent : products.entrySet()) {
+            double score = 0;
+            for (ArrayList<Integer> review : ent.getValue()) {
+                score += (1 / (double) review.get(1)) * nrmlzd.get(review.get(0)) * 5;
+            }
+            ret.put(ent.getKey(), score);
+        }
+        return ret;
     }
 
-    private HashMap<Integer, Double> reviewNormalizedScore(Enumeration<Integer> productReviews) {
+    private HashMap<Integer, Double> reviewNormalized(Enumeration<Integer> productReviews, boolean score) {
         int REVIEW_SCORE = 0;
         int REVIEW_LENGTH = 1;
         int REVIEW_NUMERATOR = 2;
@@ -167,18 +194,22 @@ public class ReviewSearch {
             double helpfulness;
             if (entry.getValue().get(REVIEW_DENOMINATOR) > 0) {
                 double normalizedDenominator = (double) entry.getValue().get(REVIEW_DENOMINATOR) / maxDenominator;
-                helpfulness = (double) (entry.getValue().get(REVIEW_NUMERATOR) / entry.getValue().get(REVIEW_DENOMINATOR)) * normalizedDenominator;
+                helpfulness = (entry.getValue().get(REVIEW_NUMERATOR) / (double) entry.getValue().get(REVIEW_DENOMINATOR)) * normalizedDenominator;
             } else {helpfulness = 0.05;}
             double normalizedLength = (double) entry.getValue().get(REVIEW_LENGTH) / maxLength;
-            double totalReviewScore = (ALPHA * normalizedLength + (1 - ALPHA) * helpfulness) * entry.getValue().get(REVIEW_SCORE);
+            double totalReviewScore = (ALPHA * normalizedLength + (1 - ALPHA) * helpfulness);
+            if (score) {
+                totalReviewScore *= entry.getValue().get(REVIEW_SCORE);
+            }
             ret.put(entry.getKey(), totalReviewScore);
         }
         return ret;
     }
 
-    double productQuality = 0;
+
     private double getProductQuality(String p) {
-        HashMap<Integer, Double> normalizedScores = reviewNormalizedScore(this.ir.getProductReviews(p));
+        double productQuality = 0;
+        HashMap<Integer, Double> normalizedScores = reviewNormalized(this.ir.getProductReviews(p), true);
         for (Double nscore: normalizedScores.values()){
             productQuality += (nscore / normalizedScores.size());
         }
@@ -247,12 +278,11 @@ public class ReviewSearch {
     }
 
     public static void main(String[] args) {
-        String dir = "./Data_Index";
+        String dir = "/tmp/Data_Index/";
 //        IndexWriter iw = new IndexWriter();
 //        iw.write("./1000.txt", dir);
-
         IndexReader ir = new IndexReader(dir);
         ReviewSearch rs = new ReviewSearch(ir);
-        rs.productSearch(Collections.enumeration(Arrays.asList("pop", "tart", "tarts")), 10);
+        rs.productSearch(Collections.enumeration(Arrays.asList("tart", "pop")), 10);
     }
 }
