@@ -9,7 +9,7 @@ public class IndexWriter {
 	private HashMap<String, Integer> tokenDict;  // token: tokenId
 	private ArrayList<String> invertedTokenDict;  // tokenId: token
 	private TreeMap<String, ArrayList<Integer>> productIds;
-	private LinkedList<ArrayList<String>> reviewIds;
+//	private LinkedList<ArrayList<Integer>> reviewIds;
 
 	private int[][] tokenBuffer = new int[TOKEN_BUFFER_SIZE][2];
 	// Array of termID, docID pairs. Regular array to sort in-place
@@ -22,8 +22,10 @@ public class IndexWriter {
 	private static final String TOKEN_INDEX_FILE = "token_index.txt";
 	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
 	private static final int PAIRS_IN_BLOCK = 1000;
-	private static final int M = 25000;
+	private static final int M = 5000;
 	private static final int TOKEN_BUFFER_SIZE = PAIRS_IN_BLOCK * (M - 1);  // Number of -pairs- in memory. Should be PAIRS_IN_BLOCK * (M-1) or something.
+
+	private static final int NUM_REVIEWS = 10000000;
 
 	/**
 	* Given product review data, creates an on disk index
@@ -34,9 +36,13 @@ public class IndexWriter {
 		createDir();
 		createDicts(inputFile);
 		createProductIndex();
-		createReviewIndex();
+		try{
+			createReviewIndex();
+		} catch (Exception e){
+			e.printStackTrace();
+			System.exit(1);
+		}
 		productIds = null;
-		reviewIds = null; // Clear memory
 		createTokenIndex();
 		File mergedDataFile = new File(dir + "/1");
 		mergedDataFile.delete();
@@ -73,9 +79,19 @@ public class IndexWriter {
 	 * @param inputFile the file containing all reviews
 	 */
 	private void createDicts(String inputFile){
+		ObjectOutputStream reviewOutput = null;
+		try {
+			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(this.dir + "/reviewIds"));
+			reviewOutput = new ObjectOutputStream(out);
+		}catch (IOException e) {
+			System.out.println("Error occurred while saving the index file: reviewIds");
+			e.printStackTrace();
+			System.exit(1);
+		}
+
 		productIds = new TreeMap<>();
 		tokenDict = new HashMap<>();
-		reviewIds = new LinkedList<>();
+//		reviewIds = new LinkedList<>();
 		invertedTokenDict = new ArrayList<>();
 
 		try {
@@ -100,8 +116,18 @@ public class IndexWriter {
 			DataParser.Review review = dataParser.parseReview(s);
 			addProductId(review.getProductId(), i);
 			int length = addReviewText(review.getText(), i);
-			addReviewId(review, i, length);
+			addReviewId(review, reviewOutput, length);
 			i++;
+			if (i % 100000 == 0){
+				System.out.println("Num Reviews: " + i);
+				System.out.println("Total Memory: " + Runtime.getRuntime().totalMemory() / (float)(1000000) + " MB" + " (MAX: " + Runtime.getRuntime().maxMemory()/ (float)(1000000) + " MB" + ")");
+				System.out.println("Used Memory: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (float)(1000000) + " MB");
+				System.out.println("Free Memory: " + Runtime.getRuntime().freeMemory() / (float)(1000000) + " MB");
+			}
+
+			if (i == NUM_REVIEWS) {
+				break;
+			}
 		}
 		this.sortBuffer();
 		try {
@@ -185,7 +211,7 @@ public class IndexWriter {
 	/**
 	 * Adds all the information that is relevant to the given reviewId to the reviewIds dictionary.
 	 */
-	private void addReviewId(DataParser.Review review, int reviewId, int length) {
+	private void addReviewId(DataParser.Review review, ObjectOutputStream reviewOutput, int length) {
 		ArrayList<String> vals = new ArrayList<>();
 
 		// 0 - productId, 1 - score, 2 - helpfulness, 3 - length
@@ -193,8 +219,13 @@ public class IndexWriter {
 		vals.add(review.getScore());
 		vals.add(review.getHelpfulness());
 		vals.add(String.valueOf(length));
-
-		reviewIds.add(vals);
+		try {
+			reviewOutput.writeObject(vals);
+			reviewOutput.reset();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+//		reviewIds.add(vals);
 	}
 
 	/**
@@ -235,7 +266,9 @@ public class IndexWriter {
 	/**
 	 * Creates and saves to the disk the review index which hold all information related to reviews.
 	 */
-	private void createReviewIndex() {
+	private void createReviewIndex() throws IOException, ClassNotFoundException {
+		ObjectInputStream reviewIds = new ObjectInputStream(new FileInputStream(this.dir + "/reviewIds"));
+
 		// Revise the review dictionary to the correct structure & change productIDs to product index
 		ArrayList<List<Integer>> dictValues = new ArrayList<>();
 		HashMap<String, Integer> productDict = new HashMap<>(productIds.size());
@@ -244,7 +277,8 @@ public class IndexWriter {
 			productDict.put(productId, i);
 			i++;
 		}
-		for (ArrayList<String> vals : reviewIds) {
+		while (reviewIds.available() != 0) {
+			ArrayList<String> vals = (ArrayList<String>) reviewIds.readObject();
 			ArrayList<Integer> new_vals = new ArrayList<>(List.of(0, 0, 0, 0, 0));
 			new_vals.set(ReviewIndex.PRODUCTID_INDEX, productDict.get(vals.get(0)));
 			String[] helpf = vals.get(2).split("/");
@@ -278,4 +312,11 @@ public class IndexWriter {
 			System.exit(1);
 		}
 	}
+//
+//	public static void main(String[] args) {
+//		String inputFile = "/cs/+/course/webdata/Movies_&_TV.txt";
+//		String dir = "/tmp/Data_Index";
+//		IndexWriter indexWriter = new IndexWriter();
+//		indexWriter.write(inputFile, dir);
+//	}
 }
