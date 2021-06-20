@@ -283,6 +283,9 @@ public class ReviewSearch {
 //        iw.write("./1000.txt", dir);
         IndexReader ir = new IndexReader(dir);
         ReviewSearch rs = new ReviewSearch(ir);
-        rs.productSearch(Collections.enumeration(Arrays.asList("tart", "pop")), 10);
+        Enumeration<Integer> asd = rs.vectorSpaceSearch(Collections.enumeration(Arrays.asList("aasjdjkasdjkasjkdhasjkd")), 10);
+        Enumeration<Integer> asd2 = rs.languageModelSearch(Collections.enumeration(Arrays.asList("aasjdjkasdjkasjkdhasjkd")), 0.6, 10);
+        Collection<String> asd3 = rs.productSearch(Collections.enumeration(Arrays.asList("aasjdjkasdjkasjkdhasjkd")), 10);
+
     }
 }
