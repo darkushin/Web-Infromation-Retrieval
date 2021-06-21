@@ -36,7 +36,7 @@ public class IndexWriter {
 		createDir();
 		createDicts(inputFile);
 		createProductIndex();
-		invertedTokenDict = null;
+//		invertedTokenDict = null; // TODO: remove? (1)
 		try{
 			createReviewIndex();
 		} catch (Exception e) {
@@ -283,7 +283,7 @@ public class IndexWriter {
 			productDict.put(productId, i);
 			i++;
 		}
-		productIds = null;
+//		productIds = null; // TODO: remove? (2)
 		while (true) {
 			ArrayList<String> vals = null;
 			try {
@@ -301,7 +301,7 @@ public class IndexWriter {
 			dictValues.add(new_vals);
 		}
 		reviewIds.close();
-		productDict = null;
+//		productDict = null; // TODO: remove? (3)
 		ReviewIndex rIndex = new ReviewIndex();
 		rIndex.insertData(dictValues);
 
