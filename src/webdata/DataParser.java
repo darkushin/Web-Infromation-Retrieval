@@ -5,52 +5,110 @@ import java.util.*;
 
 
 public class DataParser {
-    ArrayList<HashMap<String, String>> allReviews = new ArrayList<>();
-    public static final List<String> INTEREST_FIELDS = Arrays.asList("productId", "score", "helpfulness", "text");
+    public class Review{
+        private String text;
+        private String productId;
+        private String score;
+        private String helpfulness;
 
+        public String getText() {
+            return text;
+        }
+
+        public String getProductId() {
+            return productId;
+        }
+
+        public String getHelpfulness() {
+            return helpfulness;
+        }
+
+        public String getScore() {
+            return score;
+        }
+
+        public void setHelpfulness(String helpfulness) {
+            this.helpfulness = helpfulness;
+        }
+
+        public void setProductId(String productId) {
+            this.productId = productId;
+        }
+
+        public void setScore(String score) {
+            this.score = score;
+        }
+
+        public void setText(String text) {
+            this.text = text;
+        }
+    }
 
     /**
      * Given product review data, parses the data and creates a new list where each entry i contains hashmap with the fields
      * of the review, i.e: productId->value, score->value, helpfulness->value, text->value.
      * inputFile is the path to the file containing the review data
      */
-    public DataParser(String inputFile) throws IOException {
-        BufferedReader br = new BufferedReader(new FileReader(inputFile));
-        String line;
-        StringBuilder review = new StringBuilder();
-        while((line = br.readLine()) != null) {
-            if (line.contains("product/productId")){
-                if (!review.toString().equals("")){
-                    allReviews.add(parse_review(review.toString()));
-                }
-                review = new StringBuilder(line);
-            }
-            else{
-                review.append(line);
-            }
+    public List<Review> parseData(List<String> rawReviews){
+        ArrayList<Review> allReviews = new ArrayList<>();
+        for (String review: rawReviews){
+            allReviews.add(parseReview(review));
         }
-        allReviews.add(parse_review(review.toString()));  // add the last review
+        return allReviews;
     }
 
     /**
-     * Given a single review, parse the review and return a hash table containing only the relevant fields of the
-     * review, i.e: productId, score, helpfulness, text.
-     * @param review: the review that should be parsed.
-     * @return a hash table where the keys are the relevant fields mentioned above and their corresponding values.
+     * Given a single review, parse the review and return a Review object, containing all relevant information from the
+     * given review, i.e. productId, score, helpfulness and text.
      */
-    private static HashMap<String, String> parse_review(String review){
-        List<String> fields = Arrays.asList(review.split("review/"));
-        HashMap<String, String> review_fields = new HashMap<String, String>();
+    public Review parseReview(String review){
+        ArrayList<String> fields = new ArrayList<>(Arrays.asList(review.split("review/")));
+        Review parsedReview = new Review();
 
-        review_fields.put("productId", fields.get(0).split(": ")[1].split("product/")[0]);
+        parsedReview.setProductId(fields.get(0).split(": ")[1].split("product/")[0]);
         for (int i=1; i<fields.size(); i++){
             String field = fields.get(i);
-            List<String> field_value = Arrays.asList(field.split(": "));
-            if (INTEREST_FIELDS.contains(field_value.get(0))) {
-                review_fields.put(field_value.get(0), String.join(":", field_value.subList(1, field_value.size())));
+            List<String> fieldValue = Arrays.asList(field.split(": "));
+            if (fieldValue.get(0).equals("text")) {
+                parsedReview.setText(String.join(": ", fieldValue.subList(1, fieldValue.size())));
+            } else if (fieldValue.get(0).equals("helpfulness")) {
+                parsedReview.setHelpfulness(fieldValue.get(1));
+            } else if (fieldValue.get(0).equals("score")) {
+                parsedReview.setScore(fieldValue.get(1));
             }
         }
-        return review_fields;
+        return parsedReview;
+    }
+
+    public Review parseReview(ArrayList<String> review){
+        Review parsedReview = new Review();
+        StringBuilder text = new StringBuilder();
+        boolean readingText = false;
+        for (String line : review){
+            if (readingText && !line.equals("")) {
+                text.append(" ");
+                text.append(line);
+                continue;
+            }
+            int prefix = line.indexOf("/");
+            int delim = line.indexOf(":");
+            if (prefix == -1 || delim == -1 || delim < prefix) {
+                continue;
+            }
+            String field = line.substring(prefix + 1, delim);
+            if (field.equals("text")){
+                text.append(line.substring(delim + 2));
+                readingText = true;
+            } else if (field.equals("productId")) {
+                parsedReview.setProductId(line.substring(delim + 2));
+            } else if (field.equals("helpfulness")) {
+                parsedReview.setHelpfulness(line.substring(delim + 2));
+            } else if (field.equals("score")) {
+                parsedReview.setScore(line.substring(delim + 2));
+            }
+        }
+        parsedReview.setText(text.toString());
+        return parsedReview;
     }
 }
 

@@ -5,10 +5,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-public class SlowIndexWriter {
+public class IndexWriter {
 	private TreeMap<String, ArrayList<Integer>> tokenDict;  // keys are tokens, values are a list where odd cells are review ids including this token and even cells are the times the token appeared in the review.
 	private TreeMap<String, ArrayList<Integer>> productIds;
-	private TreeMap<Integer, ArrayList<String>> reviewIds;
+	private LinkedList<ArrayList<String>> reviewIds;
 	private String dir;
 
 	private static final String PRODUCT_INDEX_FILE = "product_index.txt";
@@ -21,10 +21,10 @@ public class SlowIndexWriter {
 	* Given product review data, creates an on disk index
 	* inputFile is the path to the file containing the review data
 	*/
-	public void slowWrite(String inputFile, String dir) {
+	public void write(String inputFile, String dir) {
 		this.dir = dir;
-		createDicts(inputFile);
 		createDir();
+		createDicts(inputFile);
 		createProductIndex();
 		createTokenIndex();
 		createReviewIndex();
@@ -63,20 +63,26 @@ public class SlowIndexWriter {
 	private void createDicts(String inputFile){
 		productIds = new TreeMap<>();
 		tokenDict = new TreeMap<>();
-		reviewIds = new TreeMap<>();
+		reviewIds = new LinkedList<>();
 
-		DataParser dataParser = null;
+		DataLoader dataLoader = null;
+		DataParser dataParser = new DataParser();
 		try {
-			dataParser = new DataParser(inputFile);
+			dataLoader = new DataLoader(inputFile);
 		} catch (IOException e) {
+			e.printStackTrace();
 			System.out.println("Error occurred while reading the reviews input file.");
 			System.exit(1);
 		}
-
-		for (int i = 0; i < dataParser.allReviews.size(); i++) {
-			addProductId(dataParser.allReviews.get(i).get("productId"), i + 1);
-			int length = addReviewText(dataParser.allReviews.get(i).get("text"), i + 1);
-			addReviewId(dataParser.allReviews.get(i), i, length);
+		int i=1;
+		int readTokens = 0;
+		for (ArrayList<String> s: dataLoader){
+			DataParser.Review review = dataParser.parseReview(s);
+			addProductId(review.getProductId(), i);
+			int length = addReviewText(review.getText(), i);
+			addReviewId(review, i, length);
+			readTokens += length;
+			i++;
 		}
 	}
 
@@ -129,14 +135,16 @@ public class SlowIndexWriter {
 	/**
 	 * Adds all the information that is relevant to the given reviewId to the reviewIds dictionary.
 	 */
-	private void addReviewId(HashMap<String, String> review, int reviewId, int length) {
-		reviewIds.put(reviewId, new ArrayList<>());
+	private void addReviewId(DataParser.Review review, int reviewId, int length) {
+		ArrayList<String> vals = new ArrayList<>();
+
 		// 0 - productId, 1 - score, 2 - helpfulness, 3 - length
-		for (String field : DataParser.INTEREST_FIELDS) {
-			if (field.equals("text")) { continue; }
-			reviewIds.get(reviewId).add(review.get(field));
-		}
-		reviewIds.get(reviewId).add(String.valueOf(length));
+		vals.add(review.getProductId());
+		vals.add(review.getScore());
+		vals.add(review.getHelpfulness());
+		vals.add(String.valueOf(length));
+
+		reviewIds.add(vals);
 	}
 
 	/**
@@ -180,11 +188,16 @@ public class SlowIndexWriter {
 	 */
 	private void createReviewIndex() {
 		// Revise the review dictionary to the correct structure & change productIDs to product index
-		LinkedList<List<Integer>> dictValues = new LinkedList<>();
-		for (int review : reviewIds.keySet()) {
-			ArrayList<String> vals = reviewIds.get(review);
+		ArrayList<List<Integer>> dictValues = new ArrayList<>();
+		HashMap<String, Integer> productDict = new HashMap<>(productIds.size());
+		int i = 0;
+		for (String productId: productIds.keySet()){
+			productDict.put(productId, i);
+			i++;
+		}
+		for (ArrayList<String> vals : reviewIds) {
 			ArrayList<Integer> new_vals = new ArrayList<>(List.of(0, 0, 0, 0, 0));
-			new_vals.set(ReviewIndex.PRODUCTID_INDEX, productIds.headMap(vals.get(0)).size());
+			new_vals.set(ReviewIndex.PRODUCTID_INDEX, productDict.get(vals.get(0)));
 			String[] helpf = vals.get(2).split("/");
 			new_vals.set(ReviewIndex.HELPFNUM_INDEX, Integer.parseInt(helpf[0]));
 			new_vals.set(ReviewIndex.HELPFDNOM_INDEX, Integer.parseInt(helpf[1]));
@@ -200,7 +213,7 @@ public class SlowIndexWriter {
 
 	/**
 	 * Save the given object to disk under the given name. The file is saved to the dir that was passed to the
-	 * SlowWrite() function.
+	 * write() function.
 	 */
 	private void saveToDir(String name, Object obj) {
 		FileOutputStream fileOut = null;
