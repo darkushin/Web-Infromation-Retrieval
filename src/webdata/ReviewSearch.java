@@ -213,7 +213,7 @@ public class ReviewSearch {
         for (Double nscore: normalizedScores.values()){
             productQuality += (nscore / normalizedScores.size());
         }
-        return productQuality;
+        return productQuality * Math.log(normalizedScores.size()+1);
     }
 
     private HashMap<String, Double> computeTokenQueryScore(HashMap<String, Integer> query) {
