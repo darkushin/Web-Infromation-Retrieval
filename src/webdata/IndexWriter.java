@@ -229,11 +229,4 @@ public class IndexWriter {
 			System.exit(1);
 		}
 	}
-
-	public static void main(String[] args) {
-		String input_file = "./1000.txt";
-		String dir = "./Data_Index";
-		IndexWriter ir = new IndexWriter();
-		ir.write(input_file, dir);
-	}
 }

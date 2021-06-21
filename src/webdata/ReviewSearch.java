@@ -102,16 +102,13 @@ public class ReviewSearch {
             reviewRank++;
         }
         HashMap<String, Double> productRelevance = getProductRelevance(products);
-//        for (Map.Entry<String, ArrayList<ArrayList<Integer>>> product: products.entrySet()){
-//            productRelevance.put(product.getKey() ,this.getProductRelevance(product.getValue()));
-//        }
 
         HashMap<String, Double> productQuality = new HashMap<>();
         for (String product: products.keySet()){
             productQuality.put(product, this.getProductQuality(product));
         }
 
-        double alpha = 0.9;
+        double alpha = 0.7;
         HashMap<String, Double> productScores = new HashMap<>();
         for (String product: productRelevance.keySet()){
             productScores.put(product, alpha*productRelevance.get(product) + (1-alpha)*productQuality.get(product));
@@ -275,17 +272,5 @@ public class ReviewSearch {
             result.add(list.get(i).getKey());
         }
         return Collections.enumeration(result);
-    }
-
-    public static void main(String[] args) {
-        String dir = "/tmp/Data_Index/";
-//        IndexWriter iw = new IndexWriter();
-//        iw.write("./1000.txt", dir);
-        IndexReader ir = new IndexReader(dir);
-        ReviewSearch rs = new ReviewSearch(ir);
-        Enumeration<Integer> asd = rs.vectorSpaceSearch(Collections.enumeration(Arrays.asList("aasjdjkasdjkasjkdhasjkd")), 10);
-        Enumeration<Integer> asd2 = rs.languageModelSearch(Collections.enumeration(Arrays.asList("aasjdjkasdjkasjkdhasjkd")), 0.6, 10);
-        Collection<String> asd3 = rs.productSearch(Collections.enumeration(Arrays.asList("aasjdjkasdjkasjkdhasjkd")), 10);
-
     }
 }
