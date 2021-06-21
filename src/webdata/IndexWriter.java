@@ -36,13 +36,13 @@ public class IndexWriter {
 		createDir();
 		createDicts(inputFile);
 		createProductIndex();
+		invertedTokenDict = null;
 		try{
 			createReviewIndex();
-		} catch (Exception e){
+		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
-		productIds = null;
 		createTokenIndex();
 		File mergedDataFile = new File(dir + "/1");
 		mergedDataFile.delete();
@@ -137,6 +137,12 @@ public class IndexWriter {
 			System.exit(1);
 		}
 		this.tokenBuffer = null;  // free the token buffer space
+
+		try {
+			reviewOutput.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		Comparator<Integer> cmp = Comparator.comparing(a -> invertedTokenDict.get(a));
 
 		ExternalMergeSort ems = new ExternalMergeSort(cmp, tokenFilesNumber, PAIRS_IN_BLOCK, dir);
@@ -277,8 +283,14 @@ public class IndexWriter {
 			productDict.put(productId, i);
 			i++;
 		}
-		while (reviewIds.available() != 0) {
-			ArrayList<String> vals = (ArrayList<String>) reviewIds.readObject();
+		productIds = null;
+		while (true) {
+			ArrayList<String> vals = null;
+			try {
+				vals = (ArrayList<String>) reviewIds.readObject();
+			} catch (EOFException ex) {
+				break;
+			}
 			ArrayList<Integer> new_vals = new ArrayList<>(List.of(0, 0, 0, 0, 0));
 			new_vals.set(ReviewIndex.PRODUCTID_INDEX, productDict.get(vals.get(0)));
 			String[] helpf = vals.get(2).split("/");
@@ -288,6 +300,8 @@ public class IndexWriter {
 			new_vals.set(ReviewIndex.SCORE_INDEX,  (int) Float.parseFloat(vals.get(1)));
 			dictValues.add(new_vals);
 		}
+		reviewIds.close();
+		productDict = null;
 		ReviewIndex rIndex = new ReviewIndex();
 		rIndex.insertData(dictValues);
 
@@ -312,11 +326,11 @@ public class IndexWriter {
 			System.exit(1);
 		}
 	}
-//
-//	public static void main(String[] args) {
-//		String inputFile = "/cs/+/course/webdata/Movies_&_TV.txt";
-//		String dir = "/tmp/Data_Index";
-//		IndexWriter indexWriter = new IndexWriter();
-//		indexWriter.write(inputFile, dir);
-//	}
+
+	public static void main(String[] args) {
+		String inputFile = "./1000.txt";
+		String dir = "./Data_Index";
+		IndexWriter indexWriter = new IndexWriter();
+		indexWriter.write(inputFile, dir);
+	}
 }
