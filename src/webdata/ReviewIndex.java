@@ -5,19 +5,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ReviewIndex implements Serializable{
-    private class ReviewInfo implements Serializable {
-        private byte[] encodedInfo;
-        private byte score;
+    public class ReviewInfo implements Serializable {
+        public byte[] encodedInfo;
+        public byte score;
 
         private void readObject(ObjectInputStream inputFile) throws ClassNotFoundException, IOException
         {
-            encodedInfo = (byte[]) inputFile.readObject();
+            encodedInfo = (byte[]) inputFile.readUnshared();
             score = inputFile.readByte();
         }
 
         private void writeObject(ObjectOutputStream outputFile) throws IOException
         {
-            outputFile.writeObject(encodedInfo);
+            outputFile.writeUnshared(encodedInfo);
             outputFile.writeByte(score);
         }
     }
@@ -33,20 +33,8 @@ public class ReviewIndex implements Serializable{
     /**
      * insert the given data into the list containing all the information of reviews.
      */
-    public void insertData(List<List<Integer>> inData) {
-        data = new ArrayList<>();
-        for (List<Integer> entry : inData) {
-            ReviewInfo rI = new ReviewInfo();
-            int[] info = new int[4];
-            byte score = (byte) entry.get(4).intValue();
-            info[PRODUCTID_INDEX] = entry.get(PRODUCTID_INDEX);
-            info[HELPFNUM_INDEX] = entry.get(HELPFNUM_INDEX);
-            info[HELPFDNOM_INDEX] = entry.get(HELPFDNOM_INDEX);
-            info[REVIEWLENGTH_INDEX] = entry.get(REVIEWLENGTH_INDEX);
-            rI.encodedInfo = Encoding.groupVarintEncode(info);
-            rI.score = score;
-            data.add(rI);
-        }
+    public void insertData(ArrayList<ReviewInfo> inData) {
+        this.data = inData;
     }
 
     /**
@@ -86,11 +74,11 @@ public class ReviewIndex implements Serializable{
 
     private void readObject(ObjectInputStream inputFile) throws ClassNotFoundException, IOException
     {
-        data = (ArrayList<ReviewInfo>) inputFile.readObject();
+        data = (ArrayList<ReviewInfo>) inputFile.readUnshared();
     }
 
     private void writeObject(ObjectOutputStream outputFile) throws IOException
     {
-        outputFile.writeObject(this.data);
+        outputFile.writeUnshared(this.data);
     }
 }

@@ -22,11 +22,11 @@ public class IndexWriter {
 	private static final String TOKEN_INDEX_FILE = "token_index.txt";
 	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
 	private static final int PAIRS_IN_BLOCK = 1000;
-	private static final int M = 5000;
+	private static final int M = 20000;
 	private static final int TOKEN_BUFFER_SIZE = PAIRS_IN_BLOCK * (M - 1);  // Number of -pairs- in memory. Should be PAIRS_IN_BLOCK * (M-1) or something.
 
 	private static final int NUM_REVIEWS = 10000000;
-
+//	todo: remove the reviewIds file after index creation!
 	/**
 	* Given product review data, creates an on disk index
 	* inputFile is the path to the file containing the review data
@@ -46,6 +46,8 @@ public class IndexWriter {
 		createTokenIndex();
 		File mergedDataFile = new File(dir + "/1");
 		mergedDataFile.delete();
+		File reviewIds = new File(dir + "/reviewIds");
+		reviewIds.delete();
 	}
 
 	/**
@@ -276,7 +278,9 @@ public class IndexWriter {
 		ObjectInputStream reviewIds = new ObjectInputStream(new FileInputStream(this.dir + "/reviewIds"));
 
 		// Revise the review dictionary to the correct structure & change productIDs to product index
-		ArrayList<List<Integer>> dictValues = new ArrayList<>();
+//		ArrayList<List<Integer>> dictValues = new ArrayList<>();
+		ArrayList<ReviewIndex.ReviewInfo> data = new ArrayList<>();
+
 		HashMap<String, Integer> productDict = new HashMap<>(productIds.size());
 		int i = 0;
 		for (String productId: productIds.keySet()){
@@ -284,6 +288,7 @@ public class IndexWriter {
 			i++;
 		}
 //		productIds = null; // TODO: remove? (2)
+		ReviewIndex rIndex = new ReviewIndex();
 		while (true) {
 			ArrayList<String> vals = null;
 			try {
@@ -291,20 +296,31 @@ public class IndexWriter {
 			} catch (EOFException ex) {
 				break;
 			}
-			ArrayList<Integer> new_vals = new ArrayList<>(List.of(0, 0, 0, 0, 0));
-			new_vals.set(ReviewIndex.PRODUCTID_INDEX, productDict.get(vals.get(0)));
+			ReviewIndex.ReviewInfo rI = rIndex.new ReviewInfo();
+			int[] info = new int[4];
+			byte score = (byte) (int) Float.parseFloat(vals.get(1));
+			info[ReviewIndex.PRODUCTID_INDEX] = productDict.get(vals.get(0));
 			String[] helpf = vals.get(2).split("/");
-			new_vals.set(ReviewIndex.HELPFNUM_INDEX, Integer.parseInt(helpf[0]));
-			new_vals.set(ReviewIndex.HELPFDNOM_INDEX, Integer.parseInt(helpf[1]));
-			new_vals.set(ReviewIndex.REVIEWLENGTH_INDEX,  Integer.parseInt(vals.get(3)));
-			new_vals.set(ReviewIndex.SCORE_INDEX,  (int) Float.parseFloat(vals.get(1)));
-			dictValues.add(new_vals);
+			info[ReviewIndex.HELPFNUM_INDEX] = Integer.parseInt(helpf[0]);
+			info[ReviewIndex.HELPFDNOM_INDEX] = Integer.parseInt(helpf[1]);
+			info[ReviewIndex.REVIEWLENGTH_INDEX] = Integer.parseInt(vals.get(3));
+			rI.encodedInfo = Encoding.groupVarintEncode(info);
+			rI.score = score;
+			data.add(rI);
+
+
+//			new_vals.set(ReviewIndex.PRODUCTID_INDEX, productDict.get(vals.get(0)));
+//			String[] helpf = vals.get(2).split("/");
+//			new_vals.set(ReviewIndex.HELPFNUM_INDEX, Integer.parseInt(helpf[0]));
+//			new_vals.set(ReviewIndex.HELPFDNOM_INDEX, Integer.parseInt(helpf[1]));
+//			new_vals.set(ReviewIndex.REVIEWLENGTH_INDEX,  Integer.parseInt(vals.get(3)));
+//			new_vals.set(ReviewIndex.SCORE_INDEX,  (int) Float.parseFloat(vals.get(1)));
+//			dictValues.add(new_vals);
 		}
 		reviewIds.close();
 //		productDict = null; // TODO: remove? (3)
-		ReviewIndex rIndex = new ReviewIndex();
-		rIndex.insertData(dictValues);
-
+//		ReviewIndex rIndex = new ReviewIndex();
+		rIndex.insertData(data);
 		saveToDir(REVIEW_INDEX_FILE, rIndex);
 	}
 
@@ -327,10 +343,10 @@ public class IndexWriter {
 		}
 	}
 
-	public static void main(String[] args) {
-		String inputFile = "./1000.txt";
-		String dir = "./Data_Index";
-		IndexWriter indexWriter = new IndexWriter();
-		indexWriter.write(inputFile, dir);
-	}
+//	public static void main(String[] args) {
+//		String inputFile = "./1000.txt";
+//		String dir = "./Data_Index";
+//		IndexWriter indexWriter = new IndexWriter();
+//		indexWriter.write(inputFile, dir);
+//	}
 }
