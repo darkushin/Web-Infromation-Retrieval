@@ -321,7 +321,8 @@ public class IndexWriter {
 //		productDict = null; // TODO: remove? (3)
 //		ReviewIndex rIndex = new ReviewIndex();
 		rIndex.insertData(data);
-		saveToDir(REVIEW_INDEX_FILE, rIndex);
+//		saveToDir(REVIEW_INDEX_FILE, rIndex);
+		rIndex.save(this.dir + "/" + REVIEW_INDEX_FILE);
 	}
 
 	/**
@@ -343,10 +344,10 @@ public class IndexWriter {
 		}
 	}
 
-//	public static void main(String[] args) {
-//		String inputFile = "./1000.txt";
-//		String dir = "./Data_Index";
-//		IndexWriter indexWriter = new IndexWriter();
-//		indexWriter.write(inputFile, dir);
-//	}
+	public static void main(String[] args) {
+		String inputFile = "./1000.txt";
+		String dir = "./Data_Index";
+		IndexWriter indexWriter = new IndexWriter();
+		indexWriter.write(inputFile, dir);
+	}
 }

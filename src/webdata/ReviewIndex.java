@@ -81,4 +81,29 @@ public class ReviewIndex implements Serializable{
     {
         outputFile.writeUnshared(this.data);
     }
+
+    public void save(String outputFile) throws IOException {
+        ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile)));
+        for (ReviewInfo rI : data) {
+            oos.writeObject(rI);
+            oos.reset();
+        }
+        oos.close();
+    }
+
+    public void load(String inputFile) throws IOException, ClassNotFoundException {
+        data = new ArrayList<>();
+        ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(inputFile)));
+        while (true) {
+            ReviewInfo rI = null;
+            try {
+                rI = (ReviewInfo) ois.readObject();
+            } catch (EOFException ex) {
+                break;
+            }
+            data.add(rI);
+            ois.reset();
+        }
+        ois.close();
+    }
 }

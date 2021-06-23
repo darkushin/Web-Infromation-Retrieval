@@ -43,11 +43,12 @@ public class IndexReader {
 			in.close();
 			fileIn.close();
 
-			fileIn = new FileInputStream(dir + "/" + REVIEW_INDEX_FILE);
-			in = new ObjectInputStream(fileIn);
-			reviewIndex = (ReviewIndex) in.readObject();
-			in.close();
-			fileIn.close();
+//			fileIn = new FileInputStream(dir + "/" + REVIEW_INDEX_FILE);
+//			in = new ObjectInputStream(fileIn);
+//			reviewIndex = (ReviewIndex) in.readObject();
+//			in.close();
+//			fileIn.close();
+			reviewIndex.load(dir + "/" + REVIEW_INDEX_FILE);
 
 		} catch (IOException | ClassNotFoundException e) {
 			System.out.println("Error occurred while loading an index file.");
