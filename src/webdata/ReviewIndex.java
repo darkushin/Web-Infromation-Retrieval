@@ -102,7 +102,6 @@ public class ReviewIndex implements Serializable{
                 break;
             }
             data.add(rI);
-            ois.reset();
         }
         ois.close();
     }

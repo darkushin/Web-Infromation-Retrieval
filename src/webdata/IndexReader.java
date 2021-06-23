@@ -48,6 +48,7 @@ public class IndexReader {
 //			reviewIndex = (ReviewIndex) in.readObject();
 //			in.close();
 //			fileIn.close();
+			reviewIndex = new ReviewIndex();
 			reviewIndex.load(dir + "/" + REVIEW_INDEX_FILE);
 
 		} catch (IOException | ClassNotFoundException e) {
