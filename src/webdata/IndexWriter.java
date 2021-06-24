@@ -344,10 +344,10 @@ public class IndexWriter {
 		}
 	}
 
-	public static void main(String[] args) {
-		String inputFile = "./1000.txt";
-		String dir = "./Data_Index";
-		IndexWriter indexWriter = new IndexWriter();
-		indexWriter.write(inputFile, dir);
-	}
+//	public static void main(String[] args) {
+//		String inputFile = "./1000.txt";
+//		String dir = "./Data_Index";
+//		IndexWriter indexWriter = new IndexWriter();
+//		indexWriter.write(inputFile, dir);
+//	}
 }
