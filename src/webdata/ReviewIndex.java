@@ -11,13 +11,13 @@ public class ReviewIndex implements Serializable{
 
         private void readObject(ObjectInputStream inputFile) throws ClassNotFoundException, IOException
         {
-            encodedInfo = (byte[]) inputFile.readUnshared();
+            encodedInfo = (byte[]) inputFile.readObject();
             score = inputFile.readByte();
         }
 
         private void writeObject(ObjectOutputStream outputFile) throws IOException
         {
-            outputFile.writeUnshared(encodedInfo);
+            outputFile.writeObject(encodedInfo);
             outputFile.writeByte(score);
         }
     }
@@ -74,12 +74,12 @@ public class ReviewIndex implements Serializable{
 
     private void readObject(ObjectInputStream inputFile) throws ClassNotFoundException, IOException
     {
-        data = (ArrayList<ReviewInfo>) inputFile.readUnshared();
+        data = (ArrayList<ReviewInfo>) inputFile.readObject();
     }
 
     private void writeObject(ObjectOutputStream outputFile) throws IOException
     {
-        outputFile.writeUnshared(this.data);
+        outputFile.writeObject(this.data);
     }
 
     public void save(String outputFile) throws IOException {

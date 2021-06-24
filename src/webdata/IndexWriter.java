@@ -9,7 +9,6 @@ public class IndexWriter {
 	private HashMap<String, Integer> tokenDict;  // token: tokenId
 	private ArrayList<String> invertedTokenDict;  // tokenId: token
 	private TreeMap<String, ArrayList<Integer>> productIds;
-//	private LinkedList<ArrayList<Integer>> reviewIds;
 
 	private int[][] tokenBuffer = new int[TOKEN_BUFFER_SIZE][2];
 	// Array of termID, docID pairs. Regular array to sort in-place
@@ -22,11 +21,9 @@ public class IndexWriter {
 	private static final String TOKEN_INDEX_FILE = "token_index.txt";
 	private static final String TOKEN_INVERTED_INDEX_FILE = "token_inverted_index.txt";
 	private static final int PAIRS_IN_BLOCK = 1000;
-	private static final int M = 20000;
+	private static final int M = 15000;
 	private static final int TOKEN_BUFFER_SIZE = PAIRS_IN_BLOCK * (M - 1);  // Number of -pairs- in memory. Should be PAIRS_IN_BLOCK * (M-1) or something.
 
-	private static final int NUM_REVIEWS = 10000000;
-//	todo: remove the reviewIds file after index creation!
 	/**
 	* Given product review data, creates an on disk index
 	* inputFile is the path to the file containing the review data
@@ -36,18 +33,13 @@ public class IndexWriter {
 		createDir();
 		createDicts(inputFile);
 		createProductIndex();
-//		invertedTokenDict = null; // TODO: remove? (1)
-		try{
-			createReviewIndex();
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
+		try{ createReviewIndex();
+		} catch (Exception e) { e.printStackTrace();
+			System.exit(1);}
+		productIds = null;
 		createTokenIndex();
-		File mergedDataFile = new File(dir + "/1");
-		mergedDataFile.delete();
-		File reviewIds = new File(dir + "/reviewIds");
-		reviewIds.delete();
+		new File(dir + "/1").delete();
+		new File(dir + "/reviewIds").delete();
 	}
 
 	/**
@@ -82,18 +74,12 @@ public class IndexWriter {
 	 */
 	private void createDicts(String inputFile){
 		ObjectOutputStream reviewOutput = null;
-		try {
-			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(this.dir + "/reviewIds"));
-			reviewOutput = new ObjectOutputStream(out);
-		}catch (IOException e) {
-			System.out.println("Error occurred while saving the index file: reviewIds");
-			e.printStackTrace();
-			System.exit(1);
-		}
+		try { reviewOutput = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(this.dir + "/reviewIds")));
+		} catch (IOException e) { e.printStackTrace();
+			System.exit(1);}
 
 		productIds = new TreeMap<>();
 		tokenDict = new HashMap<>();
-//		reviewIds = new LinkedList<>();
 		invertedTokenDict = new ArrayList<>();
 
 		try {
@@ -120,16 +106,6 @@ public class IndexWriter {
 			int length = addReviewText(review.getText(), i);
 			addReviewId(review, reviewOutput, length);
 			i++;
-			if (i % 100000 == 0){
-				System.out.println("Num Reviews: " + i);
-				System.out.println("Total Memory: " + Runtime.getRuntime().totalMemory() / (float)(1000000) + " MB" + " (MAX: " + Runtime.getRuntime().maxMemory()/ (float)(1000000) + " MB" + ")");
-				System.out.println("Used Memory: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (float)(1000000) + " MB");
-				System.out.println("Free Memory: " + Runtime.getRuntime().freeMemory() / (float)(1000000) + " MB");
-			}
-
-			if (i == NUM_REVIEWS) {
-				break;
-			}
 		}
 		this.sortBuffer();
 		try {
@@ -139,12 +115,8 @@ public class IndexWriter {
 			System.exit(1);
 		}
 		this.tokenBuffer = null;  // free the token buffer space
-
-		try {
-			reviewOutput.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		try { reviewOutput.close();
+		} catch (IOException e) { e.printStackTrace();}
 		Comparator<Integer> cmp = Comparator.comparing(a -> invertedTokenDict.get(a));
 
 		ExternalMergeSort ems = new ExternalMergeSort(cmp, tokenFilesNumber, PAIRS_IN_BLOCK, dir);
@@ -230,10 +202,7 @@ public class IndexWriter {
 		try {
 			reviewOutput.writeObject(vals);
 			reviewOutput.reset();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-//		reviewIds.add(vals);
+		} catch (IOException e) { e.printStackTrace();}
 	}
 
 	/**
@@ -278,7 +247,6 @@ public class IndexWriter {
 		ObjectInputStream reviewIds = new ObjectInputStream(new FileInputStream(this.dir + "/reviewIds"));
 
 		// Revise the review dictionary to the correct structure & change productIDs to product index
-//		ArrayList<List<Integer>> dictValues = new ArrayList<>();
 		ArrayList<ReviewIndex.ReviewInfo> data = new ArrayList<>();
 
 		HashMap<String, Integer> productDict = new HashMap<>(productIds.size());
@@ -287,15 +255,11 @@ public class IndexWriter {
 			productDict.put(productId, i);
 			i++;
 		}
-//		productIds = null; // TODO: remove? (2)
 		ReviewIndex rIndex = new ReviewIndex();
 		while (true) {
 			ArrayList<String> vals = null;
-			try {
-				vals = (ArrayList<String>) reviewIds.readObject();
-			} catch (EOFException ex) {
-				break;
-			}
+			try { vals = (ArrayList<String>) reviewIds.readObject();
+			} catch (EOFException ex) { break;}
 			ReviewIndex.ReviewInfo rI = rIndex.new ReviewInfo();
 			int[] info = new int[4];
 			byte score = (byte) (int) Float.parseFloat(vals.get(1));
@@ -307,21 +271,9 @@ public class IndexWriter {
 			rI.encodedInfo = Encoding.groupVarintEncode(info);
 			rI.score = score;
 			data.add(rI);
-
-
-//			new_vals.set(ReviewIndex.PRODUCTID_INDEX, productDict.get(vals.get(0)));
-//			String[] helpf = vals.get(2).split("/");
-//			new_vals.set(ReviewIndex.HELPFNUM_INDEX, Integer.parseInt(helpf[0]));
-//			new_vals.set(ReviewIndex.HELPFDNOM_INDEX, Integer.parseInt(helpf[1]));
-//			new_vals.set(ReviewIndex.REVIEWLENGTH_INDEX,  Integer.parseInt(vals.get(3)));
-//			new_vals.set(ReviewIndex.SCORE_INDEX,  (int) Float.parseFloat(vals.get(1)));
-//			dictValues.add(new_vals);
 		}
 		reviewIds.close();
-//		productDict = null; // TODO: remove? (3)
-//		ReviewIndex rIndex = new ReviewIndex();
 		rIndex.insertData(data);
-//		saveToDir(REVIEW_INDEX_FILE, rIndex);
 		rIndex.save(this.dir + "/" + REVIEW_INDEX_FILE);
 	}
 
@@ -343,11 +295,4 @@ public class IndexWriter {
 			System.exit(1);
 		}
 	}
-
-//	public static void main(String[] args) {
-//		String inputFile = "./1000.txt";
-//		String dir = "./Data_Index";
-//		IndexWriter indexWriter = new IndexWriter();
-//		indexWriter.write(inputFile, dir);
-//	}
 }
