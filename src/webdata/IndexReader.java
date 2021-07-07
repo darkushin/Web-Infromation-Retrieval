@@ -43,11 +43,8 @@ public class IndexReader {
 			in.close();
 			fileIn.close();
 
-			fileIn = new FileInputStream(dir + "/" + REVIEW_INDEX_FILE);
-			in = new ObjectInputStream(fileIn);
-			reviewIndex = (ReviewIndex) in.readObject();
-			in.close();
-			fileIn.close();
+			reviewIndex = new ReviewIndex();
+			reviewIndex.load(dir + "/" + REVIEW_INDEX_FILE);
 
 		} catch (IOException | ClassNotFoundException e) {
 			System.out.println("Error occurred while loading an index file.");
@@ -144,10 +141,10 @@ public class IndexReader {
 		if (currentTokenIdx == -1){
 			return enumerator;
 		}
-		int tokenInvertedIdxPtr = tokenIndex.get(currentTokenIdx).getInvertedIdxPtr();
+		long tokenInvertedIdxPtr = tokenIndex.get(currentTokenIdx).getInvertedIdxPtr();
 		int numReviews = tokenIndex.get(currentTokenIdx).getFrequency() * 2;
 		byte[] dest = null;
-		int nextInvertedIdxPtr;
+		long nextInvertedIdxPtr;
 		try {
 			RandomAccessFile file = new RandomAccessFile(this.dir + "/" + TOKEN_INVERTED_INDEX_FILE, "r");
 			if (currentTokenIdx + 1 <tokenIndex.get().size()) {
@@ -155,7 +152,7 @@ public class IndexReader {
 			} else {
 				nextInvertedIdxPtr = (int) file.length();
 			}
-			int bytesToRead = nextInvertedIdxPtr - tokenInvertedIdxPtr;
+			int bytesToRead = (int) (nextInvertedIdxPtr - tokenInvertedIdxPtr);
 			dest  = new byte[bytesToRead];
 			file.seek(tokenInvertedIdxPtr);
 			file.read(dest);
@@ -164,7 +161,7 @@ public class IndexReader {
 			e.printStackTrace();
 			System.exit(1);
 		}
-		ArrayList<Integer> vals = new ArrayList<Integer>(Encoding.deltaDecode(dest).subList(0, numReviews));
+		ArrayList<Integer> vals = Encoding.groupVarDecodeMultiple(dest);
 		Encoding.diffToIds(vals);
 
 		return Collections.enumeration(vals);

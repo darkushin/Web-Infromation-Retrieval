@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ReviewIndex implements Serializable{
-    private class ReviewInfo implements Serializable {
-        private byte[] encodedInfo;
-        private byte score;
+    public class ReviewInfo implements Serializable {
+        public byte[] encodedInfo;
+        public byte score;
 
         private void readObject(ObjectInputStream inputFile) throws ClassNotFoundException, IOException
         {
@@ -33,20 +33,8 @@ public class ReviewIndex implements Serializable{
     /**
      * insert the given data into the list containing all the information of reviews.
      */
-    public void insertData(List<List<Integer>> inData) {
-        data = new ArrayList<>();
-        for (List<Integer> entry : inData) {
-            ReviewInfo rI = new ReviewInfo();
-            int[] info = new int[4];
-            byte score = (byte) entry.get(4).intValue();
-            info[PRODUCTID_INDEX] = entry.get(PRODUCTID_INDEX);
-            info[HELPFNUM_INDEX] = entry.get(HELPFNUM_INDEX);
-            info[HELPFDNOM_INDEX] = entry.get(HELPFDNOM_INDEX);
-            info[REVIEWLENGTH_INDEX] = entry.get(REVIEWLENGTH_INDEX);
-            rI.encodedInfo = Encoding.groupVarintEncode(info);
-            rI.score = score;
-            data.add(rI);
-        }
+    public void insertData(ArrayList<ReviewInfo> inData) {
+        this.data = inData;
     }
 
     /**
@@ -92,5 +80,29 @@ public class ReviewIndex implements Serializable{
     private void writeObject(ObjectOutputStream outputFile) throws IOException
     {
         outputFile.writeObject(this.data);
+    }
+
+    public void save(String outputFile) throws IOException {
+        ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile)));
+        for (ReviewInfo rI : data) {
+            oos.writeObject(rI);
+            oos.reset();
+        }
+        oos.close();
+    }
+
+    public void load(String inputFile) throws IOException, ClassNotFoundException {
+        data = new ArrayList<>();
+        ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(inputFile)));
+        while (true) {
+            ReviewInfo rI = null;
+            try {
+                rI = (ReviewInfo) ois.readObject();
+            } catch (EOFException ex) {
+                break;
+            }
+            data.add(rI);
+        }
+        ois.close();
     }
 }

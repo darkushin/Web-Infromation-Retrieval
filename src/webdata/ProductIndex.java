@@ -1,6 +1,7 @@
 package webdata;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,20 +9,20 @@ import java.util.List;
 public class ProductIndex implements Serializable {
 
     private class ProductInfo  implements Serializable{
-        private short stringInfo; // This is either a pointer to the concatenated string, or a prefix size.
+        private int stringInfo; // This is either a pointer to the concatenated string, or a prefix size.
         private int reviewId;
         private short spanLength;
 
         private void readObject(ObjectInputStream inputFile) throws ClassNotFoundException, IOException
         {
-            stringInfo = inputFile.readShort();
+            stringInfo = inputFile.readInt();
             reviewId = inputFile.readInt();
             spanLength = inputFile.readShort();
         }
 
         private void writeObject(ObjectOutputStream outputFile) throws IOException
         {
-            outputFile.writeShort(stringInfo);
+            outputFile.writeInt(stringInfo);
             outputFile.writeInt(reviewId);
             outputFile.writeShort(spanLength);
         }
@@ -36,11 +37,13 @@ public class ProductIndex implements Serializable {
 
     private ArrayList<ProductInfo> data;
     private String dictString;
+    private int dictBytes;
     private int k;
 
     public ProductIndex(int k) {
-        data = new ArrayList<>();
-        dictString = null;
+        this.data = new ArrayList<>();
+        this.dictString = null;
+        this.dictBytes = 0;
         this.k = k;
     }
 
@@ -55,14 +58,15 @@ public class ProductIndex implements Serializable {
             pf.reviewId = entry.get(REVIEWID_INDEX);
             pf.spanLength = entry.get(SPANLENGTH_INDEX).shortValue();
             if (offset == 0) {
-                pf.stringInfo = entry.get(POINTER_INDEX).shortValue();
+                pf.stringInfo = entry.get(POINTER_INDEX);
             } else {
-                pf.stringInfo = entry.get(PREFIXL_INDEX).shortValue();
+                pf.stringInfo = entry.get(PREFIXL_INDEX);
             }
             offset++;
             offset = offset % k;
             data.add(pf);
         }
+        this.dictBytes = this.dictString.getBytes(StandardCharsets.UTF_8).length;
     }
 
     /**
@@ -122,14 +126,16 @@ public class ProductIndex implements Serializable {
     private void readObject(ObjectInputStream inputFile) throws ClassNotFoundException, IOException
     {
         k = inputFile.readInt();
-        dictString = inputFile.readUTF();
+        dictBytes = inputFile.readInt();
+        dictString = new String(inputFile.readNBytes(dictBytes), StandardCharsets.UTF_8);
         data = (ArrayList<ProductInfo>) inputFile.readObject();
     }
 
     private void writeObject(ObjectOutputStream outputFile) throws IOException
     {
         outputFile.writeInt(k);
-        outputFile.writeUTF(dictString);
+        outputFile.writeInt(this.dictBytes);
+        outputFile.writeBytes(this.dictString);
         outputFile.writeObject(data);
     }
 
